@@ -113,7 +113,9 @@ def map_month(month, by="command line"):
                                   people if family_of_sam is not None else None, itdr.area_match_min(s))
         feeds["itdr"]["families"] = {k: fam[k] for k in ("placed", "not_placed", "exact", "fuzzy",
                                                          "by_family_name", "by_department")}
-        feeds["itdr"].setdefault("notes", []).extend(fam["notes"])
+        itdr_area = (fam["notes"], family_rows, people if family_of_sam is not None else None, itdr.area_match_min(s))
+    else:
+        itdr_area = None
 
     # Repos placed with families through their committer (owner, 3 Nov 2026) and the TR-02 hygiene figures
     # (planned metric, not scored yet). Without HR or the owners file every repo is Not yet mapped.
@@ -150,6 +152,21 @@ def map_month(month, by="command line"):
         feeds["app_inventory"].setdefault("notes", []).extend(linked["notes"])
         if linked["itdr_notes"]:
             feeds["itdr"].setdefault("notes", []).extend(linked["itdr_notes"])
+    # Business Product Area notes, written only now (owner, 6 Nov 2026): an application the app inventory placed
+    # doesn't need an area, so the notes cover only the applications still to be placed by their area.
+    if itdr_area is not None:
+        notes, frows, ppl, amin = itdr_area
+        rows = feeds["itdr"]["rows"]
+        by_inv = [r for r in rows if (r.get("family_match") or {}).get("how") == "app inventory"]
+        if by_inv:
+            rest = [dict(r) for r in rows if (r.get("family_match") or {}).get("how") != "app inventory"]
+            notes = itdr.match_families(rest, frows, ppl, amin)["notes"] if rest else []
+            placed = sum(1 for r in rows if r.get("family_id"))
+            feeds["itdr"]["families"].update(placed=placed, not_placed=len(rows) - placed, by_inventory=len(by_inv))
+            notes = [f"For information: {len(by_inv)} of {len(rows)} ITDR applications were placed by the app inventory; "
+                     f"{placed - len(by_inv)} by Business Product Area; {len(rows) - placed} not placed"] + notes
+        feeds["itdr"].setdefault("notes", []).extend(notes)
+
     # The AD members aren't saved with the mapped month: they can be hundreds of thousands of rows, and each app
     # already carries its owners (6 Nov 2026: the web process ran out of memory).
     for k in ("members", "kinds"):
