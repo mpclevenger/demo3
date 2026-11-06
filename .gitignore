@@ -1,0 +1,7 @@
+# Never commit real data, secrets or local state.
+input/
+*.env
+.env*
+__pycache__/
+*.pyc
+store/

@@ -1,0 +1,704 @@
+{
+  "_how_to": [
+    "This file says which column (or JSON field) in each provider's file gives TRUST each piece of information it needs. You edit it; nobody needs to change code.",
+    "To change a name: find the feed (e.g. \"hr\") and the field (e.g. \"SAM_ACCOUNT\"), put the column name exactly as it appears in the provider's file FIRST in the list, save, and upload the file again.",
+    "Case, spaces, underscores and dashes don't matter anywhere, here or in the files: \"Email - Work\", \"email_work\" and \"EMAIL WORK\" are the same. Close spellings are matched anyway and shown on the upload result.",
+    "A name starting with * means \"the column name ends with this\": \"*SAM_Acct\" finds \"Worker_SAM_Acct\". If two columns end that way, neither is used and the upload result says so.",
+    "The names on the left (\"SAM_ACCOUNT\", \"Worker\", ...) are TRUST's own; don't change them. Only the lists on the right are yours.",
+    "If a field isn't in the file, the file still loads; only the metrics that need it show No data.",
+    "Keep it valid JSON: names in double quotes, separated by commas. A trailing comma is fine. Keys starting with _ are notes and are ignored.",
+    "Feeds with no fields have no layout yet: add the real column names when the file arrives."
+  ],
+  "hr": {
+    "_note": "The SAM column is the one whose name ends in SAM_Acct (owner, 3 Nov 2026): '*SAM_Acct' first below; * means 'the column name ends with this'. Only the CTO's reporting line is kept (doc 13).",
+    "SAM_ACCOUNT": [
+      "*SAM_Acct",
+      "SAM_ACCOUNT",
+      "sam account",
+      "samaccountname",
+      "employee id"
+    ],
+    "Worker": [
+      "Worker",
+      "worker name",
+      "name"
+    ],
+    "Email - Work": [
+      "Email - Work",
+      "work email",
+      "email"
+    ],
+    "Workers Manager": [
+      "Workers Manager",
+      "worker's manager",
+      "manager"
+    ],
+    "Supervisory Organization": [
+      "Supervisory Organization",
+      "sup org"
+    ],
+    "Top Level Supervisory": [
+      "Top Level Supervisory",
+      "top level sup org"
+    ],
+    "Executive Level Supervisory": [
+      "Executive Level Supervisory",
+      "exec level supervisory"
+    ],
+    "Worker Type": [
+      "Worker Type"
+    ],
+    "Position Worker Type": [
+      "Position Worker Type"
+    ],
+    "Is Manager": [
+      "Is Manager"
+    ],
+    "Number of Direct Reports": [
+      "Number of Direct Reports",
+      "direct reports"
+    ],
+    "VP or Higher": [
+      "VP or Higher"
+    ],
+    "Management reporting level from top": [
+      "Management reporting level from top",
+      "reporting level"
+    ]
+  },
+  "cx_sast": {
+    "_note": "JSON field names (doc 16). name is checkmarx-sast-policy-compliant.",
+    "importer": [
+      "importer"
+    ],
+    "data": [
+      "data",
+      "results",
+      "repos"
+    ],
+    "key": [
+      "key",
+      "repo",
+      "repository"
+    ],
+    "measurements": [
+      "measurements",
+      "measurement",
+      "results"
+    ],
+    "name": [
+      "name"
+    ],
+    "value": [
+      "value",
+      "compliant",
+      "passed"
+    ],
+    "comment": [
+      "comment",
+      "message",
+      "detail"
+    ],
+    "report_as_of": [
+      "report_as_of",
+      "as_of",
+      "report_date"
+    ]
+  },
+  "cx_sca": {
+    "_note": "Same fields as SAST. name is checkmarx-sca-policy-compliant.",
+    "importer": [
+      "importer"
+    ],
+    "data": [
+      "data",
+      "results",
+      "repos"
+    ],
+    "key": [
+      "key",
+      "repo",
+      "repository"
+    ],
+    "measurements": [
+      "measurements",
+      "measurement",
+      "results"
+    ],
+    "name": [
+      "name"
+    ],
+    "value": [
+      "value",
+      "compliant",
+      "passed"
+    ],
+    "comment": [
+      "comment",
+      "message",
+      "detail"
+    ],
+    "report_as_of": [
+      "report_as_of",
+      "as_of",
+      "report_date"
+    ]
+  },
+  "tcc": {
+    "_note": "TCC export, column names confirmed by the owner (3 Nov 2026), listed first; earlier names kept as fall-backs. Names are matched ignoring case, spaces and punctuation. Only the columns TRUST uses are listed (Title, SBU Engineering Head Approver, Stakeholder Approvers and Install Window are not loaded).",
+    "Ticket ID": [
+      "RPD ID",
+      "Ticket ID"
+    ],
+    "Ticket Link": [
+      "RPD Link",
+      "Ticket Link"
+    ],
+    "Status": [
+      "Status"
+    ],
+    "Change Category": [
+      "Change Category"
+    ],
+    "Risk Score": [
+      "Risk Score"
+    ],
+    "Created date (UTC)": [
+      "Created date (UTC)"
+    ],
+    "Author": [
+      "Author"
+    ],
+    "Author email": [
+      "Author email"
+    ],
+    "Assignees": [
+      "Assignees"
+    ],
+    "Department": [
+      "Department"
+    ],
+    "L4 director": [
+      "L4 director"
+    ],
+    "Planned start": [
+      "Planned Start",
+      "Planned start"
+    ],
+    "Planned end": [
+      "Planned End",
+      "Planned end"
+    ],
+    "last deployment": [
+      "Actual Last Deployment",
+      "last deployment"
+    ],
+    "Implementer": [
+      "Implementer"
+    ],
+    "Peer reviewer": [
+      "Peer reviewer"
+    ],
+    "Peer review outcome": [
+      "Peer review outcome"
+    ],
+    "confirmed risk rating": [
+      "Confirmed Risk Rating",
+      "confirmed risk rating"
+    ],
+    "overall change approval": [
+      "Overall Change Approval",
+      "overall change approval"
+    ],
+    "Go/No-Go meeting": [
+      "Go/No-Go Meeting",
+      "Go/No-Go meeting"
+    ],
+    "Go/no-go outcome": [
+      "Go/No-Go Outcome",
+      "Go/no-go outcome"
+    ],
+    "Overall outcome": [
+      "Overall outcome"
+    ],
+    "Resolved": [
+      "Resolved"
+    ],
+    "Pre-Deploy Compliant": [
+      "Pre-Deploy Compliant"
+    ],
+    "Fully Compliant": [
+      "Fully Compliant"
+    ],
+    "Fields Missing": [
+      "Fields Missing"
+    ],
+    "peer review recorded at (UTC)": [
+      "Peer Review Recorded At (UTC)",
+      "peer review recorded at (UTC)"
+    ],
+    "Approval recorded at (UTC)": [
+      "Approval Recorded At (UTC)",
+      "Approval recorded at (UTC)"
+    ],
+    "Outcome recorded at (UTC)": [
+      "Outcome Recorded At (UTC)",
+      "Outcome recorded at (UTC)"
+    ]
+  },
+  "ntcc": {
+    "_note": "12-column Non-TCC export (QUESTION_BANK R-TCC-13).",
+    "RPD ID": [
+      "RPD ID"
+    ],
+    "RPD Link": [
+      "RPD Link"
+    ],
+    "Status": [
+      "Status"
+    ],
+    "RPD Category": [
+      "RPD Category"
+    ],
+    "Created Date (UTC)": [
+      "Created Date (UTC)"
+    ],
+    "Last updated (UTC)": [
+      "Last updated (UTC)"
+    ],
+    "Author": [
+      "Author"
+    ],
+    "Author Email": [
+      "Author Email"
+    ],
+    "Department": [
+      "Department"
+    ],
+    "L4 director": [
+      "L4 director"
+    ]
+  },
+  "postmortems": {
+    "_note": "Doc 15. The export spells postmortem_id as postmoretm_id.",
+    "incident_id": [
+      "incident_id"
+    ],
+    "SBU": [
+      "SBU"
+    ],
+    "end_datetime": [
+      "end_datetime"
+    ],
+    "Incident type": [
+      "Incident type"
+    ],
+    "Incident Defcon": [
+      "Incident Defcon"
+    ],
+    "incident_defcon_type": [
+      "incident_defcon_type"
+    ],
+    "postmortem_conducted": [
+      "postmortem_conducted"
+    ],
+    "user_stakeholders": [
+      "user_stakeholders"
+    ],
+    "postmortem_id": [
+      "postmoretm_id",
+      "postmortem_id"
+    ],
+    "postmortem_is_primary": [
+      "postmortem_is_primary"
+    ],
+    "action_items_total": [
+      "action_items_total"
+    ]
+  },
+  "actions": {
+    "_note": "16-column action items export (doc 15). ActionItemLink is =HYPERLINK(\"url\",\"JIRA:ABCD-1234\").",
+    "Type": [
+      "Type"
+    ],
+    "ActionItemLink": [
+      "ActionItemLink"
+    ],
+    "Severity": [
+      "Severity"
+    ],
+    "Created": [
+      "Created"
+    ],
+    "ETA": [
+      "ETA"
+    ],
+    "Assignees": [
+      "Assignees"
+    ],
+    "ActionCategory": [
+      "ActionCategory"
+    ],
+    "Status": [
+      "Status"
+    ],
+    "SBU": [
+      "SBU"
+    ],
+    "PostmortemLink": [
+      "PostmortemLink"
+    ],
+    "incident_id": [
+      "incident_id"
+    ]
+  },
+  "app_inventory": {
+    "_note": "App inventory (owner, 6 Nov 2026): one row per application service. bcp_tier, bcp_tier_source, itdr_match and unmapped_reasons are not read (dropped at upload). Only app_status 'confirmed' counts as active (setting app_active_statuses).",
+    "app_id": [
+      "app_id",
+      "app id",
+      "application id"
+    ],
+    "app_name": [
+      "app_name",
+      "app name",
+      "application name"
+    ],
+    "app_status": [
+      "app_status",
+      "app status",
+      "status"
+    ],
+    "app_department": [
+      "app_department",
+      "department"
+    ],
+    "app_sbu": [
+      "app_sbu",
+      "sbu"
+    ],
+    "app_org_hierarchy": [
+      "app_org_hierarchy",
+      "org hierarchy",
+      "app_org_heirarchy"
+    ],
+    "app_owner_raw": [
+      "app_owner_raw",
+      "owner raw"
+    ],
+    "app_owner_type": [
+      "app_owner_type",
+      "owner type"
+    ],
+    "app_owner_email": [
+      "app_owner_email",
+      "owner email",
+      "app owner email"
+    ],
+    "service_id": [
+      "service_id",
+      "service id"
+    ],
+    "service_name": [
+      "service_name",
+      "service name"
+    ],
+    "service_owner_email": [
+      "service_owner_email",
+      "service owner email"
+    ],
+    "service_repo": [
+      "service_repo",
+      "service repo",
+      "repo"
+    ]
+  },
+  "app_owner_members": {
+    "_note": "AD owner groups (owner, 6 Nov 2026): the CSV written by tools/expand_owner_groups.ps1, one row per member of each owner group (nested groups included).",
+    "owner_email": [
+      "owner_email",
+      "owner email",
+      "group email"
+    ],
+    "owner_kind": [
+      "owner_kind",
+      "owner kind",
+      "kind"
+    ],
+    "group_sam": [
+      "group_sam",
+      "group"
+    ],
+    "member_sam": [
+      "member_sam",
+      "samaccountname",
+      "member sam"
+    ],
+    "member_email": [
+      "member_email",
+      "member mail",
+      "mail"
+    ],
+    "member_name": [
+      "member_name",
+      "displayname",
+      "member name"
+    ],
+    "member_enabled": [
+      "member_enabled",
+      "enabled"
+    ],
+    "included": [
+      "included"
+    ],
+    "reason": [
+      "reason"
+    ]
+  },
+  "hr_mapping": {
+    "_note": "Product family owners (owner, 3 Nov 2026): a CSV (one line per family; several owner emails comma-separated in one cell; Band = product or platform) or product_line_owners.json ([{\"product_line\": ..., \"owner_email\": ...}], band optional). A product line with several leads: repeat it, or list the emails. Everyone who reports up to a lead in HR belongs to that family (nearest lead wins). Not used when the setting team_grouping is l3.",
+    "Product Family": [
+      "Product Family",
+      "product_line",
+      "family",
+      "product family name"
+    ],
+    "Owner Email(s)": [
+      "Owner Email(s)",
+      "owner_email",
+      "owner emails",
+      "owner email",
+      "owners"
+    ],
+    "Band": [
+      "Band",
+      "band",
+      "type",
+      "family type",
+      "product or platform"
+    ]
+  },
+  "repos": {
+    "_note": "GitHub repo file from tools/github_repo_export.py (owner, 3 Nov 2026): one row per repo with its main-branch protection settings and recent human committers. TR-02 (planned).",
+    "Repo": [
+      "Repo"
+    ],
+    "Url": [
+      "Url"
+    ],
+    "Archived": [
+      "Archived"
+    ],
+    "Fork": [
+      "Fork"
+    ],
+    "Empty": [
+      "Empty"
+    ],
+    "DefaultBranch": [
+      "DefaultBranch"
+    ],
+    "PushedAt": [
+      "PushedAt"
+    ],
+    "LastDefaultBranchCommit": [
+      "LastDefaultBranchCommit"
+    ],
+    "ProtectionSource": [
+      "ProtectionSource"
+    ],
+    "BranchProtected": [
+      "BranchProtected"
+    ],
+    "RequiredApprovals": [
+      "RequiredApprovals"
+    ],
+    "LastPushApprovalRequired": [
+      "LastPushApprovalRequired"
+    ],
+    "ForcePushAllowed": [
+      "ForcePushAllowed"
+    ],
+    "DeletionsAllowed": [
+      "DeletionsAllowed"
+    ],
+    "AdminEnforced": [
+      "AdminEnforced"
+    ],
+    "BypassAllowed": [
+      "BypassAllowed"
+    ],
+    "StaleReviewsDismissed": [
+      "StaleReviewsDismissed"
+    ],
+    "CodeOwnerReviewRequired": [
+      "CodeOwnerReviewRequired"
+    ],
+    "StatusChecksRequired": [
+      "StatusChecksRequired"
+    ],
+    "CodeOwnersFile": [
+      "CodeOwnersFile"
+    ],
+    "LastHumanCommitterEmail": [
+      "LastHumanCommitterEmail"
+    ],
+    "LastHumanCommitterLogin": [
+      "LastHumanCommitterLogin"
+    ],
+    "LastHumanCommitDate": [
+      "LastHumanCommitDate"
+    ],
+    "TopCommitterEmail": [
+      "TopCommitterEmail"
+    ],
+    "TopCommitterLogin": [
+      "TopCommitterLogin"
+    ],
+    "TopCommitterShare": [
+      "TopCommitterShare"
+    ],
+    "HumanCommitsSampled": [
+      "HumanCommitsSampled"
+    ]
+  },
+  "commits": {
+    "_note": "Layout not received yet."
+  },
+  "itdr": {
+    "_note": "ITDR application file (owner, 3 Nov 2026): Excel, header merged over rows 1 and 2, one row per application. Ref is a number; Business Product Area may be blank; Recovery Tier is Tier 0 (most critical) to Tier 5, or TBC.",
+    "Ref": [
+      "Ref",
+      "Ref No",
+      "Reference",
+      "ITDR Ref"
+    ],
+    "Application Name": [
+      "Application Name",
+      "Application",
+      "App Name"
+    ],
+    "Business Product Area": [
+      "Business Product Area",
+      "Product Area",
+      "Business Area"
+    ],
+    "Recovery Tier": [
+      "Recovery Tier",
+      "Tier",
+      "ITDR Tier"
+    ]
+  },
+  "dr_tests": {
+    "_note": "Completed DR tests (owner, 3 Nov 2026): one row per test. Tier as the ITDR application file; Name as the ITDR application file; Type of Test Open (DR test, production) / Closed (DR test, UAT or test) / TTX (tabletop exercise, not a DR test); When MM/DD/YYYY (the tabletop exercise's date); Status Successful or blank (= not performed); Comments like 'DR Test completed on 14th March 2026' (when the DR test was last performed) or 'TTX: Tabletop exercise completed'.",
+    "Tier": [
+      "Tier",
+      "Recovery Tier",
+      "ITDR Tier"
+    ],
+    "Name": [
+      "Name",
+      "Application Name",
+      "Application"
+    ],
+    "Business Area": [
+      "Business Area",
+      "Business Product Area",
+      "Product Area"
+    ],
+    "ITDR Lead": [
+      "ITDR Lead",
+      "Lead",
+      "DR Lead"
+    ],
+    "Type of Test": [
+      "Type of Test",
+      "Test Type",
+      "Type"
+    ],
+    "When": [
+      "When",
+      "Test Date",
+      "Date"
+    ],
+    "Status": [
+      "Status",
+      "Result",
+      "Outcome"
+    ],
+    "Comments": [
+      "Comments",
+      "Comment",
+      "Notes"
+    ]
+  },
+  "secrets": {
+    "_note": "Layout not received yet."
+  },
+  "cyberark": {
+    "_note": "Layout not received yet."
+  },
+  "sailpoint": {
+    "_note": "Layout not received yet."
+  },
+  "hosting_eol": {
+    "_note": "Layout not received yet."
+  },
+  "defects": {
+    "_note": "Jira issues file jira_issues.csv from tools/jira_export.py (Jira Data Center; owner, 3 Nov 2026): one row per issue, team = the person who closed it. TE-03 (planned) and delivery figures (shown, not scored).",
+    "issue_key": [
+      "issue_key"
+    ],
+    "project": [
+      "project"
+    ],
+    "issue_type": [
+      "issue_type"
+    ],
+    "is_defect": [
+      "is_defect"
+    ],
+    "priority": [
+      "priority"
+    ],
+    "severity": [
+      "severity"
+    ],
+    "found_in_env": [
+      "found_in_env"
+    ],
+    "status": [
+      "status"
+    ],
+    "status_category": [
+      "status_category"
+    ],
+    "resolution": [
+      "resolution"
+    ],
+    "created_at": [
+      "created_at"
+    ],
+    "first_in_progress_at": [
+      "first_in_progress_at"
+    ],
+    "resolved_at": [
+      "resolved_at"
+    ],
+    "closed_by": [
+      "closed_by"
+    ],
+    "closed_by_email": [
+      "closed_by_email"
+    ],
+    "closed_by_username": [
+      "closed_by_username"
+    ],
+    "reopen_count": [
+      "reopen_count"
+    ],
+    "story_points": [
+      "story_points"
+    ]
+  }
+}

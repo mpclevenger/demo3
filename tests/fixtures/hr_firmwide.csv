@@ -1,0 +1,11 @@
+Worker,Email-Work,Workers Manger,Supervisory Organization,Top Level Supervisory,Executive Level Supervisory,Department,Worker Type,Position Worker Type,Location Address - Country,Is Manager,Number of Direct Reports,VP or Higher,Management reporting level from top,SAM ACCOUNT
+Chris Exec,chris.exec@example.com,,Office of the CEO (Chris Exec),Office of the CEO (Chris Exec),Office of the CEO (Chris Exec),Exec,Employee,Regular,United States of America,Yes,2,Yes,1,cexec
+Dana Cto,dana.cto@example.com,Chris Exec,Technology (Dana Cto),Technology (Dana Cto),Technology (Dana Cto),Tech,Employee,Regular,United States of America,Yes,2,Yes,2,DCTO
+Alex Moreno,alex.moreno@example.com,Dana Cto,Platform (Alex Moreno),Platform (Alex Moreno),Technology (Dana Cto),Tech,Employee,Regular,United Kingdom,Yes,1,Yes,3,amoreno
+Sam Lee,not-an-email,Alex Moreno,Platform (Alex Moreno),Platform (Alex Moreno),Technology (Dana Cto),Tech,Contingent,Agency contractor,United States of America,Yes,1,,4,slee
+Pat Kim,pat.kim@example.com,Sam Lee,Payments Eng (Sam Lee),Platform (Alex Moreno),Technology (Dana Cto),Tech,Employee,Regular,United States of America,,0,,5,pkim
+Jo Ray,jo.ray@example.com,Nobody Here,Data (Nobody Here),Platform (Alex Moreno),Technology (Dana Cto),Tech,Employee,Regular,United States of America,,0,,4,jray
+Fran Head,fran.head@example.com,Chris Exec,Finance (Fran Head),Finance (Fran Head),Finance (Fran Head),Finance,Employee,Regular,United States of America,Yes,1,Yes,2,fhead
+Sam Lee,sam.lee2@example.com,Fran Head,Finance (Fran Head),Finance (Fran Head),Finance (Fran Head),Finance,Employee,Regular,United States of America,,0,,3,slee2
+Dup One,dup.one@example.com,Dana Cto,Technology (Dana Cto),Technology (Dana Cto),Technology (Dana Cto),Tech,Employee,Regular,United States of America,,0,,3,dup1
+Dup Again,dup.again@example.com,Dana Cto,Technology (Dana Cto),Technology (Dana Cto),Technology (Dana Cto),Tech,Employee,Regular,United States of America,,0,,3,DUP1

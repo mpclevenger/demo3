@@ -1,0 +1,7 @@
+incident_id,incident_title,SBU,Status,start_datetime,end_datetime,Incident type,Incident Defcon,incident_defcon_type,critical_or_swe_escalated,postmortem_conducted,user_stakeholders,postmoretm_id,postmortem_is_primary,action_items_total
+INC-A,Outage,Payments,,2026-09-01T10:00:00Z,2026-09-01T12:00:00Z,Critical/SWE,3,critical,True,True,,101,true,4
+INC-A,Outage,Payments,,2026-09-01T10:00:00Z,2026-09-01T12:00:00Z,Critical/SWE,3,critical,True,True,,102,false,0
+INC-B,Outage,Payments,,2026-09-01T10:00:00Z,2026-09-01T12:00:00Z,Critical/SWE,0,false alarm,True,True,,,false,1
+INC-C,Outage,Payments,,2026-09-01T10:00:00Z,2026-09-01T12:00:00Z,Critical/SWE,Not Available,Cannot determine defcon type,True,True,"PKIM, nobody",103,true,0
+INC-D,Outage,Payments,,2026-09-01T10:00:00Z,not a date,Critical/SWE,4,critial,True,True,,104,TRUE,1
+,Outage,Payments,,2026-09-01T10:00:00Z,2026-09-01T12:00:00Z,Critical/SWE,5,critical,True,True,,105,true,0

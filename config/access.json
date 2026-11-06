@@ -1,0 +1,21 @@
+{
+  "_how_to": [
+    "Who may see and do what in TRUST (docs/wiki/roles-and-permissions.md). Edit, save, deploy.",
+    "user_header: the name of the request header in which the access add-on passes each person's SAM_ACCOUNT. While it is empty, TRUST runs open: anyone past the add-on can do everything and types their name, and the page says so.",
+    "groups_header: the header with the person's AD groups (names or CN=... distinguished names). groups_separator: what separates them (a comma unless set).",
+    "groups: the AD groups for each role. A person in several groups gets every matching role. Group names are matched without regard to capitals.",
+    "family_lead_groups: optional AD groups per product family id, for delegates; owners in the product family owners file are family leads already.",
+    "Family members need no group: TRUST places them through HR and the owners file, like their work.",
+    "WARNING: once user_header is set, anyone not in one of these groups, and not placed in a family, is turned away. To undo, empty user_header and deploy."
+  ],
+  "user_header": "",
+  "groups_header": "",
+  "groups_separator": ",",
+  "groups": {
+    "cto_leadership": [],
+    "tech_risk": [],
+    "head_of_tech_risk": [],
+    "auditor": []
+  },
+  "family_lead_groups": {}
+}

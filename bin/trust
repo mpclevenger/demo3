@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Run a TRUST command from anywhere, e.g.  bin/trust map 2026-10  (the same as  python manage.py map 2026-10).
+here="$(cd "$(dirname "$0")/.." && pwd)"
+exec python "$here/manage.py" "$@"

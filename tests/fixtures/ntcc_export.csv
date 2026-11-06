@@ -1,0 +1,7 @@
+RPD ID,RPD Link,Title,Status,RPD Category,Created Date (UTC),Last updated (UTC),Author,Author Email,Assignees,Department,L4 director
+5001,https://rpd.example.com/5001,Hotfix,Completed,Hotfix,09/28/2026 10:00:00 AM,10/02/2026 03:00:00 PM,Alex Moreno,alex.moreno@example.com,Sam Lee,Tech,Dana Cto
+5002,https://rpd.example.com/5002,Tweak,queued,Change,10/01/2026 10:00:00 AM,10/03/2026 03:00:00 PM,Sam Lee,sam.lee@example.com,,Tech,Dana Cto
+5003,https://rpd.example.com/5003,Patch,MONITORING,Change,10/05/2026,10/20/2026 09:15:00.123 AM,Pat Kim,,,Tech,Dana Cto
+1001,https://rpd.example.com/1001,Also in TCC,Resolved,Change,09/30/2026,10/01/2026,Alex Moreno,alex.moreno@example.com,,Tech,Dana Cto
+,,No id,Completed,,,,,,,,
+5001,https://rpd.example.com/5001,Duplicate,Completed,,,,,,,,

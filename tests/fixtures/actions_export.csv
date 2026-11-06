@@ -1,0 +1,9 @@
+Type,ActionItemLink,ActionItemTitle,Severity,Created,ETA,DaysLeftOrPastETA,Assignees,ActionCategory,Status,OriginalRpds,SBU,PostmortemLink,PostmortemTitle,incident_id,incident_title
+JIRA,"=HYPERLINK(""https://jira.example.com/A-1"",""JIRA:A-1"")",Fix it,High,9/1/2026,,-3,alex.moreno@example.com,Prevent,Monitoring,,Payments,https://pm.example.com/x,PM,INC-A,Outage
+JIRA,"=HYPERLINK(""https://jira.example.com/A-2"",""JIRA:A-2"")",Fix it,High,9/2/2026,9/30/2026,-3,sam.lee@example.com,Prevent,Completed,,Payments,https://pm.example.com/x,PM,INC-A,Outage
+GITHUB,"=HYPERLINK(""https://github.example.com/org/r/issues/5"",""GITHUB:org/r/issues/5"")",Fix it,High,9/3/2026,10/15/2026,-3,Pat Kim <Pat.Kim@example.com>; sam.lee@example.com,Prevent,In Progress,,Payments,https://pm.example.com/x,PM,INC-A,Outage
+RPD,"=HYPERLINK(""https://tcc.example.com/123"",""RPD:123"")",Fix it,High,9/4/2026,10/1/2026,-3,alex.moreno@example.com,Prevent,To Do,,Payments,https://pm.example.com/x,PM,INC-B,Outage
+JIRA,"=HYPERLINK(""https://jira.example.com/X-9"",""JIRA:X-9"")",Fix it,High,9/5/2026,10/1/2026,-3,alex.moreno@example.com,Prevent,Queued,,Payments,https://pm.example.com/x,PM,INC-Z,Outage
+JIRA,"=HYPERLINK(""https://jira.example.com/D-1"",""JIRA:D-1"")",Fix it,High,9/6/2026,10/1/2026,-3,unknown.person@example.com,Prevent,Hold,,Payments,https://pm.example.com/x,PM,INC-D,Outage
+JIRA,JIRA:P-7,Fix it,High,9/7/2026,soon,-3,,Prevent,Weird new,,Payments,https://pm.example.com/x,PM,INC-A,Outage
+JIRA,"=HYPERLINK(""https://jira.example.com/A-1"",""JIRA:A-1"")",Fix it,High,9/1/2026,,-3,dup@example.com,Prevent,Monitoring,,Payments,https://pm.example.com/x,PM,INC-A,Outage

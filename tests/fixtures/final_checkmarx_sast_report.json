@@ -1,0 +1,36 @@
+{
+"importer": "checkmarx",
+"data": [
+{
+"key": "reponame/anothername",
+"measurements" : [
+{
+"name":"checkmarx-sast-policy-compliant",
+"value": true,
+"comment": "Compliant. No SAST findings detected."
+}
+]
+},
+{
+"key": "reponame2/anothername2",
+"measurements" : [
+{
+"name":"checkmarx-sast-policy-compliant",
+"value": true,
+"comment": "NON-COMPLIANT `#/#` SAST findings exeed their aging thresholds. Violations: 2 CRITICAL, 8 MEDIUM."
+}
+]
+}, 
+{
+"key": "reponame3/anothername3",
+"measurements" : [
+{
+"name":"checkmarx-sast-policy-compliant",
+"value": true,
+"comment": "COMPLIANT All # SAST findings are within acceptable aging thresholds for their security levels."
+}
+]
+}, 
+
+]
+}
