@@ -122,10 +122,16 @@ table.hm{border-collapse:collapse;width:100%;table-layout:fixed}
 .hm td.bd{width:40px;padding:0;text-align:center;background:#f3f5f7;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.08em;border-left:0}
 .hm td.bd span{writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block}
 .hm td.c{text-align:center}
-.ft tr.mrow.s-r td{background:rgba(220,38,38,.09)}.ft tr.mrow.s-a td{background:rgba(217,119,6,.11)}.ft tr.mrow.s-g td{background:rgba(22,163,74,.08)}
-.ft tr.rdet.s-r td{background:rgba(220,38,38,.04)}.ft tr.rdet.s-a td{background:rgba(217,119,6,.05)}.ft tr.rdet.s-g td{background:rgba(22,163,74,.035)}
-.ft tr.mrow td:first-child,.ft tr.rdet td:first-child{box-shadow:inset 4px 0 0 #c4cad1}.ft tr.s-r td:first-child{box-shadow:inset 4px 0 0 #dc2626}.ft tr.s-a td:first-child{box-shadow:inset 4px 0 0 #d97706}.ft tr.s-g td:first-child{box-shadow:inset 4px 0 0 #16a34a}
-.ft td{vertical-align:top}.ft .bubs{flex-wrap:wrap}.ft td.tc{padding-left:0!important;padding-right:6px!important}.ft td:first-child{padding-left:12px;font-weight:600;color:#3b434c}.ft .fst{font-weight:700;white-space:nowrap}.ft .fst.s-r{color:#b91c1c}.ft .fst.s-a{color:#92400e}.ft .fst.s-g{color:#166534}.ft .fst.s-n{color:#4a535d;font-weight:600}
+.ft>tbody>tr.mrow.s-r>td{background:rgba(220,38,38,.09)}.ft>tbody>tr.mrow.s-a>td{background:rgba(217,119,6,.11)}.ft>tbody>tr.mrow.s-g>td{background:rgba(22,163,74,.08)}
+.ft>tbody>tr.rdet.s-r>td{background:rgba(220,38,38,.04)}.ft>tbody>tr.rdet.s-a>td{background:rgba(217,119,6,.05)}.ft>tbody>tr.rdet.s-g>td{background:rgba(22,163,74,.035)}
+.ft>tbody>tr.mrow>td:first-child,.ft>tbody>tr.rdet>td:first-child{box-shadow:inset 4px 0 0 #c4cad1}.ft>tbody>tr.s-r>td:first-child{box-shadow:inset 4px 0 0 #dc2626}.ft>tbody>tr.s-a>td:first-child{box-shadow:inset 4px 0 0 #d97706}.ft>tbody>tr.s-g>td:first-child{box-shadow:inset 4px 0 0 #16a34a}
+.ftwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.ft{min-width:860px}
+.ft td{vertical-align:top;overflow-wrap:break-word;word-break:normal}.ft td .dl{white-space:normal;font-size:13px}.ft .bub-team{max-width:100%;min-width:0;text-align:left;overflow-wrap:anywhere;white-space:normal}
+.ft .res,.fam .lt.ft .res,.fam .lt.ft .fw .res{font-size:15px;line-height:20px}.ft td .cap{font-size:12.5px}
+@media (max-width:1240px){.ft col.cb,.ft>thead>tr>th:first-child,.ft>tbody>tr.mrow>td:first-child{display:none}
+.ft>tbody>tr.mrow>td:nth-child(2){box-shadow:inset 4px 0 0 #c4cad1;padding-left:12px}.ft>tbody>tr.s-r>td:nth-child(2){box-shadow:inset 4px 0 0 #dc2626}.ft>tbody>tr.s-a>td:nth-child(2){box-shadow:inset 4px 0 0 #d97706}.ft>tbody>tr.s-g>td:nth-child(2){box-shadow:inset 4px 0 0 #16a34a}
+.ft{min-width:720px}}
+.ft td{vertical-align:top}.ft .bubs{flex-wrap:wrap}.ft td.tc{padding-left:0!important;padding-right:6px!important}.ft>tbody>tr.mrow>td:first-child{padding-left:12px;font-weight:600;color:#3b434c}.ft .fst{font-weight:700;white-space:nowrap}.ft .fst.s-r{color:#b91c1c}.ft .fst.s-a{color:#92400e}.ft .fst.s-g{color:#166534}.ft .fst.s-n{color:#4a535d;font-weight:600}
 .ft .ftags{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}.ft td.tc{text-align:right}.ft .rtog{min-width:28px;padding:2px 6px}.ft tr.rdet td{padding:6px 12px 10px!important}
 .ftools{float:right;display:flex;gap:8px;align-items:center}.fchip{font-size:13px;background:#eef2f6;border-radius:4px;padding:2px 4px 2px 8px}
 .sgm[data-act="blkf"]{cursor:pointer}.sgm[data-act="blkf"]:hover{outline:1px solid #9aa3ad}.sgm[data-act="blkf"]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}.sgm.fon{outline:2px solid #1f2937;outline-offset:-2px}
@@ -2118,7 +2124,7 @@ function famTable(fid, fr, p, f, loading){
   const anyOpen = !S.snap && ents.some(([id]) => famRowOpen(fid, id));
   const tools = S.snap ? '' : `<span class="noprint ftools">${blk ? `<span class="fchip">Showing ${esc(bname(blk))} only <button type="button" class="sm" data-act="blkf" data-b="${blk}">Show all</button></span>` : ''}${anyOpen ? `<button type="button" class="sm" data-act="row-close-all">Close all</button>` : ''}</span>`;
   const head = `<thead><tr><th>Block</th><th>Metric</th><th>Result</th><th>Status</th><th>Firmwide</th><th>${PRIOR[S.p] ? 'vs ' + priorName() : 'Change'}</th><th>Where the items sit</th><th><span class="sr-only">Detail</span></th></tr></thead>`;
-  const table = ents.length ? `<table class="dt lt ft"><caption class="sr-only">${esc(f.name)} metrics, worst first</caption><colgroup><col style="width:10%"><col style="width:17%"><col style="width:19%"><col style="width:8%"><col style="width:13%"><col style="width:10%"><col style="width:19%"><col style="width:4%"></colgroup>${head}<tbody>${rowsH}</tbody></table>`
+  const table = ents.length ? `<div class="ftwrap"><table class="dt lt ft"><caption class="sr-only">${esc(f.name)} metrics, worst first</caption><colgroup><col class="cb" style="width:10%"><col style="width:17%"><col style="width:18%"><col style="width:8%"><col style="width:13%"><col style="width:11%"><col style="width:19%"><col style="width:4%"></colgroup>${head}<tbody>${rowsH}</tbody></table></div>`
     : `<p class="muted">${blk ? `Nothing measured in ${esc(bname(blk))} yet.` : 'Nothing measured yet.'}</p>`;
   return `<section class="grp" aria-labelledby="h-all">${tools}<h2 id="h-all">Metrics</h2><p class="cap" style="margin:0 0 8px">Worst first. Click a column head to sort${S.snap ? '' : ', a building block above to show only its metrics, or ▸ for the detail and to explain or challenge a number'}.</p>${table}
     ${planned.length ? `<p class="cap" style="margin:8px 0 0">${planned.join(' · ')}</p>` : ''}${notes.length ? `<p class="cap" style="margin:4px 0 0">${notes.join(' · ')}</p>` : ''}</section>`;
@@ -3353,14 +3359,14 @@ document.addEventListener('click', e => {
     secSave(); S.keepScroll = true; render(); const n = document.querySelector(`.sgm[data-b="${c}"]`) || document.querySelector('#h-all'); if (n) n.focus({preventScroll:true}); return; }
   if (a === 'row-tog') { const k = focKey(parse()[1], b.dataset.m), was = famRowOpen(parse()[1], b.dataset.m);
     if (was) { FAMT.open.delete(k); FOC.which.delete(k); if (FOC.chOpen === k) FOC.chOpen = null; if (S.form === b.dataset.m) S.form = null; DDS.l1.delete('l|' + b.dataset.m); delete FOC.sent[k + '|ex']; delete FOC.sent[k + '|ch']; }
-    else FAMT.open.add(k);
+    else { FAMT.open.add(k); if (!isCTO()) { FOC.which.add(k); evLoad(); } }     // the items table shows straight away (owner, 6 Nov 2026)
     S.keepScroll = true; render(); const n = document.querySelector(`[data-act="row-tog"][data-m="${b.dataset.m}"]`); if (n) n.focus({preventScroll:true}); return; }
   if (a === 'row-close-all') { const pre = `${S.p}|${parse()[1]}|`;
     [FAMT.open, FOC.which, FOC.allItems].forEach(set => [...set].filter(k => k.startsWith(pre)).forEach(k => set.delete(k)));
     Object.keys(FOC.sent).filter(k => k.startsWith(pre)).forEach(k => delete FOC.sent[k]);
     if ((FOC.chOpen || '').startsWith(pre)) FOC.chOpen = null; S.form = null; [...DDS.l1].filter(k => k.startsWith('l|')).forEach(k => DDS.l1.delete(k));
     S.keepScroll = true; render(); const n = $('#h-all'); if (n) n.focus({preventScroll:true}); return; }
-  if (a === 'row-explain') { FAMT.open.add(focKey(parse()[1], b.dataset.m)); FOC.chOpen = null; S.form = b.dataset.m; S.formWhere = 'a'; S.keepScroll = true; render(); const t = $('#cft'); if (t) t.focus(); return; }
+  if (a === 'row-explain') { FAMT.open.add(focKey(parse()[1], b.dataset.m)); FOC.which.add(focKey(parse()[1], b.dataset.m)); evLoad(); FOC.chOpen = null; S.form = b.dataset.m; S.formWhere = 'a'; S.keepScroll = true; render(); const t = $('#cft'); if (t) t.focus(); return; }
   if (a === 'go-met') { S.jumpTo = {m:b.dataset.m, f:b.dataset.f, at:Date.now(), done:false}; FAMT.blk = null; go('/family/' + b.dataset.f); return; }
   if (a === 'dd-team') {
     const k = (b.dataset.w || 'l') + '|' + b.dataset.m; DDS.l1.add(k); DDS.tf[k] = b.dataset.t; if (isTR()) DDS.l2.add(k); evLoad(); DDS.focus = b.dataset.dd;
