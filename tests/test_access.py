@@ -57,19 +57,20 @@ def test_tech_risk_runs_the_month_and_is_recorded_by_account(client):
     assert client.post("/api/lock", json={"month": "2026-09"}, headers=MEMBER).status_code == 403
 
 
-def test_auditor_reads_but_cannot_change_or_download(client):
+def test_auditor_reads_and_downloads_but_cannot_change(client):
     assert client.get("/api/month/2026-09", headers=AUD).status_code == 200
     assert client.post("/api/update", json={"month": "2026-09"}, headers=AUD).status_code == 403
-    assert client.get("/api/items/2026-09/payments.csv", headers=AUD).status_code == 403
+    # owner, 9 Nov 2026: whoever is logged in can drill into the data and export it
+    assert client.get("/api/items/2026-09/payments.csv", headers=AUD).status_code != 403
     me = client.get("/data.json", headers=AUD).json["access"]["me"]
     assert me["read_only"] and me["page_role"] == "tr"
 
 
-def test_cto_sees_every_family_but_no_console_or_download(client):
+def test_cto_sees_and_exports_every_family_but_no_console(client):
     d = client.get("/data.json", headers=CTO).json
     assert all("reason" in r for f in d["periods"]["2026-09"]["families"].values() for r in f["metrics"].values())
     assert client.get("/api/month/2026-09", headers=CTO).status_code == 403
-    assert client.get("/api/items/2026-09/payments.csv", headers=CTO).status_code == 403
+    assert client.get("/api/items/2026-09/payments.csv", headers=CTO).status_code != 403        # owner, 9 Nov 2026
     assert d["access"]["me"]["page_role"] == "cto"
 
 
@@ -94,10 +95,11 @@ def test_family_lead_gets_their_family_only(client):
     assert '"page_role": "fl:payments"' in html
 
 
-def test_family_member_comments_but_cannot_download_or_reply(client):
+def test_family_member_comments_and_downloads_own_family_but_cannot_reply(client):
     q = client.post("/api/comments", json={"month": "2026-09", "family": "payments", "kind": "query", "text": "Is this right?"}, headers=TR).json["comment"]
     assert client.post("/api/comments", json={"month": "2026-09", "family": "payments", "kind": "explanation", "text": "Context"}, headers=MEMBER).status_code == 200
-    assert client.get("/api/items/2026-09/payments.csv", headers=MEMBER).status_code == 403
+    assert client.get("/api/items/2026-09/payments.csv", headers=MEMBER).status_code != 403     # own family (owner, 9 Nov 2026)
+    assert client.get("/api/items/2026-09/cards.csv", headers=MEMBER).status_code == 403          # not another family's
     assert client.post("/api/comments", json={"month": "2026-09", "family": "payments", "reply_to": q["id"], "text": "Yes"}, headers=MEMBER).status_code == 403
     # the lead replies but can't close; Tech Risk can
     assert client.post("/api/comments", json={"month": "2026-09", "family": "payments", "reply_to": q["id"], "text": "Yes", "status": "closed"}, headers=LEAD).status_code == 403

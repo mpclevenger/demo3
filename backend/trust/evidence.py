@@ -11,6 +11,10 @@ from . import config
 
 # What the items are called and what type they are: counting.items_name / item_type in config/metrics.json.
 _COUNTING = {mid: x["counting"] for mid, x in config.metrics().items() if x.get("counting")}
+# The column that marks the items behind a result, in every download (owner, 9 Nov 2026: neutral wording, not
+# "needs attention"). The page's own words are ATT in frontend/index.html.
+ATTENTION_LABEL = "Contributing"
+
 NAMES = {mid: c["items_name"] for mid, c in _COUNTING.items() if c.get("items_name")}
 
 
@@ -87,7 +91,7 @@ def _cell(v):
 
 
 COLUMNS = (("metric", "Metric"), ("metric_name", "Metric name"), ("item", "Item"), ("result", "What it shows"),
-           ("needs_attention", "Needs attention"), ("person", "Person"), ("team", "Team"),
+           ("needs_attention", ATTENTION_LABEL), ("person", "Person"), ("team", "Team"),
            ("date_label", "Date is"), ("date", "Date"), ("incident", "Incident"), ("detail", "Detail"),
            ("app", "App"), ("app_owners", "App owners"), ("link", "Link"))
 
@@ -148,17 +152,37 @@ def table(mid, items, team=None):
     for it in items:
         if team and (it.get("team_key") or NO_TEAM[0]) != team:
             continue
-        rows.append({"cells": [_fmt(c, it, mid) for c in cols], "attention": describe(mid, it)["concern"],
+        rows.append({"cells": [_fmt(c, it, mid) for c in cols], "attention": describe(mid, it)["concern"], "_rank": _rank(mid, it),
                      "detail": it.get("detail") or "", "who": [{k: w.get(k) or "" for k, _ in WHO_COLUMNS} for w in it.get("who") or []],
                      "team": it.get("team") or "", "as_of": it.get("as_of") or "",
                      "team_key": it.get("team_key") or NO_TEAM[0], "link": it.get("link") or None})
-    rows.sort(key=lambda r: not r["attention"])          # stable: within each group the provider's order
+    # owner, 9 Nov 2026: the items behind the result first, worst first; then the rest in the provider's order
+    rows.sort(key=lambda r: (not r["attention"], -r["_rank"] if r["attention"] else 0))
+    for r in rows:
+        del r["_rank"]
     return {"columns": [c["label"] for c in cols], "types": [c.get("as") or "" for c in cols], "rows": rows}
+
+
+def _rank(mid, it):
+    """How bad a contributing item is, bigger = worse (owner, 9 Nov 2026: worst first)."""
+    if mid == "TE-02":
+        return 2 * bool(it.get("client_impact")) + bool(it.get("revert"))
+    if mid == "UN-02":                                   # overdue longest first: the earliest due date
+        due = _day(it.get("due"))
+        return -int(due.replace("-", "")) if due[:4].isdigit() else 0
+    if mid == "UN-01":
+        return 2 if it.get("class") == "SWE" else 1
+    if mid == "TR-02":
+        return len(it.get("failed") or []) + (1 if not it.get("protected") else 0)
+    if mid in ("RE-01", "RE-03"):                        # Tier 0 before Tier 1 before Tier 2
+        t = str(it.get("tier") or "")
+        return -int(t[-1]) if t[-1:].isdigit() else -9
+    return 0
 
 
 def flat_head(t):
     """The download's header row: needs attention, the metric's columns, then the shared columns."""
-    return (["Needs attention"] + t["columns"] + ["Detail"] + [label for _, label in WHO_COLUMNS]
+    return ([ATTENTION_LABEL] + t["columns"] + ["Detail"] + [label for _, label in WHO_COLUMNS]
             + ["Team", "Product family", "As of (file uploaded)", "Link"])
 
 
@@ -174,7 +198,8 @@ def section_csv(scored, fid, mid, month, family_name, team=None, team_name=None)
     w = csv.writer(buf)
     who = f"{family_name}" + (f", {team_name}" if team_name else "")
     w.writerow([f"TRUST, {month}: {_name(mid)} ({mid}) for {who}. Each row is one item behind the number; "
-                f"Needs attention = Yes is an item that pulls the result down."])
+                f"{ATTENTION_LABEL} = Yes marks the items behind this month's result (for example reverted releases, "
+                f"overdue actions or repos missing a check)."])
     w.writerow(flat_head(t))
     for r in t["rows"]:
         w.writerow(flat_row(r, family_name))
@@ -196,10 +221,10 @@ def workbook(scored, fid, month, family_name, results=None):
     order = [m for m in config.metrics() if m in by_metric]
     about.append([f"TRUST items for {family_name}, {month}"])
     about["A1"].font = Font(bold=True, size=13)
-    about.append(["Each tab is one metric: every item behind its number, the items that pull it down first. "
+    about.append([f"Each tab is one metric: every item behind its number, the ones marked {ATTENTION_LABEL} first. "
                   "Contains people's names: confidential, for this family's use only."])
     about.append([])
-    about.append(["Tab", "Metric", "Result", "Status", "Items", "Need attention"])
+    about.append(["Tab", "Metric", "Result", "Status", "Items", ATTENTION_LABEL])
     for c in about[4]:
         c.font = Font(bold=True)
     tabs = []

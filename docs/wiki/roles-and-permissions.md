@@ -13,7 +13,7 @@ Status: **built on TRUST's side, 3 Nov 2026** (`backend/trust/access.py`, `confi
 | **Head of Tech Risk** | One person (and a named deputy) | Everything Tech Risk can do; approves family delegates. |
 | **Family lead** | The owners named in the product family owners file, and their delegates | Their own family: read, drill into the items, download, explain, query. |
 | **Family member** | People in a family's line in HR | Their own family: read and comment. |
-| **Auditor** | Named auditors, for the length of an engagement | Read everything, including the lock record and activity. No downloads, no changes. |
+| **Auditor** | Named auditors, for the length of an engagement | Read everything, including the lock record and activity, and download the item data (owner, 9 Nov 2026). No changes. |
 
 **How a person gets a role:**
 - Explicit roles (CTO and leadership, Tech Risk, Head of Tech Risk, Auditor) come from **AD groups** named in `config/access.json` (owner, 3 Nov 2026). Who is in each group, and auditors' end dates, are managed in AD.
@@ -31,7 +31,7 @@ Y = yes · own = their own family only · N = no
 | A family's page | Y | Y | Y | own | own | Y |
 | Other families' pages | Y | Y | Y | N (the firm's typical value only) | N | Y |
 | Item detail ("What's driving it"), with people's names | Y | Y | Y | own | own | Y |
-| Download a family's items (one metric's table as CSV, or every metric as Excel with one tab each; every download is logged with the name typed on the page) | N | Y | Y | own | N | **N** |
+| Download a family's items (one metric's table as CSV, or every metric as Excel with one tab each; every download is logged with the name typed on the page). Owner, 9 Nov 2026: whoever can see a family's items can export them | Y | Y | Y | own | own | Y |
 | Metric dictionary and Method pages | Y | Y | Y | Y | Y | Y |
 | Data dictionary (every file TRUST reads, its checks and its data contract) | Y | Y | Y | Y | Y | Y |
 | Data sources, This month, Validation checks | N | Y | Y | N | N | Y (read only) |
@@ -93,4 +93,4 @@ Everything on TRUST's side is built and tested (`tests/test_access.py`). Wiring 
 3. **Delegates:** allowed.
 4. **Leadership:** the CTO and everyone else can see the CTO view. **Nobody comments on the CTO page**: people comment on their own family's page, and that flows up.
 5. **Item detail:** shows people's names in the drill-down; sub-teams on family pages come from a configurable HR column (Department for now).
-6. **Auditors:** read only, no downloading.
+6. **Auditors:** read only; they may download the item data (owner, 9 Nov 2026: whoever is logged in can drill into the data and export it).

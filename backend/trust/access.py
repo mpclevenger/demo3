@@ -134,8 +134,8 @@ def can(pr, action, family=None):
         return "head_of_tech_risk" in r
     if action == "console_read":                      # Data sources, This month, Validation checks, activity, proposals list
         return tr or "auditor" in r
-    if action == "download":
-        return tr or family in pr["lead_of"]
+    if action == "download":                          # owner, 9 Nov 2026: whoever can see a family's items can export them
+        return sees_all(pr) or family in pr["lead_of"] or family in pr["member_of"]
     if action == "claim":                             # claim a Lost and Found item for a family (owner, 9 Nov 2026)
         return tr or family in pr["lead_of"]
     if action == "comment":                           # a new explanation, data query or action on a family page

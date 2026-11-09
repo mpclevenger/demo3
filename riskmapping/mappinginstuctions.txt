@@ -1,0 +1,60 @@
+In the TRUST repo, copy every .yaml and .yml file from
+<PASTE THE FULL PATH TO THE RISK ENGINE'S config/risks FOLDER HERE>
+into config/risks/, exactly as they are (no renaming or editing). Don't touch
+config/risks/README.md. If config/risks/external-data-breach-tool-use.yaml exists and
+no file with that name came from that folder, delete it. Then show me the list of
+file names now in config/risks/. Change nothing else.
+
+
+Read only; do not change any file.
+
+1. Read every .yaml and .yml file in config/risks/ (skip README.md). For each, note the
+   file name without .yaml, and its name, domain, category and description.
+
+2. Read config/metrics.json. For each metric under "metrics", note its ID, "name",
+   "status", "definition", and under "card": "risk" and "risk_monitored" (the plain
+   sentence about the risk it watches).
+
+3. For each metric, suggest which risk files it watches: the risks whose description
+   matches what the metric measures. A metric can watch several risks, or none. Only
+   suggest a risk if the match is clear from the descriptions; don't stretch.
+
+4. Show me one table, one row per metric, sorted by metric ID, with these columns:
+   Metric ID | Metric name | Status | Suggested risk files | Why (one short sentence) | Confidence (High, Medium, Low)
+   Use "none" when nothing fits. Mark Medium and Low rows so I look at them first.
+
+5. Under the table, list any risk file that no metric watches.
+
+6. Then give me the mapping in exactly this form, High-confidence rows only, ready for me
+   to paste into my next prompt:
+   TE-01: risk-file-a
+   SE-01: risk-file-b, risk-file-c
+
+
+
+
+
+Now apply the mapping you gave me at the end of your last answer (the
+"METRIC-ID: risk-file, risk-file" lines, High confidence only). If I wrote any changes
+to it below this prompt, use my changes instead for those metrics.
+
+1. Open config/metrics.json. Each metric is a section that starts with its ID, like
+       "TE-01": {
+   and inside it, under "card", there is exactly one line that reads
+       "risks": []
+   For each metric in the mapping, find that metric's own "risks": [] line (the first
+   "risks" line after the metric's ID and before the next metric's ID) and replace it
+   with the risk file names, in double quotes, comma separated, on one line.
+   Example: "risks": ["unauthorized-change", "weak-testing"]
+   Use only names of files that are in config/risks/. If a name isn't there, stop and
+   tell me; don't guess a close name.
+   Change nothing else in config/metrics.json: no other lines, no reformatting, no
+   reordering, no added or removed spaces or commas. Don't touch any other file.
+
+2. Run: python -m pytest -q tests
+   Show me the last lines of the output. If a test fails, show me the failure and stop;
+   don't change tests or other files to make it pass.
+
+3. Run: git diff config/metrics.json
+   Show it to me, then list each metric you linked and its risks, one per line.
+   Do not commit.

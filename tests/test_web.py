@@ -150,7 +150,7 @@ def test_drill_down_and_csv_download(client):
     r = client.get("/api/items/2026-09/payments.csv")
     assert r.status_code == 200 and "attachment" in r.headers["Content-Disposition"]
     text = r.data.decode("utf-8-sig")
-    assert "Metric,Metric name,Item,What it shows,Needs attention,Person,Team" in text and "TE-01" in text
+    assert "Metric,Metric name,Item,What it shows,Contributing,Person,Team" in text and "TE-01" in text
     assert client.get("/api/items/2026-09/nope.csv").status_code == 404
 
 
@@ -177,7 +177,7 @@ def test_each_metric_has_its_data_table_and_downloads(client):
     r = client.get("/api/items/2026-09/payments/TE-01.csv")
     assert r.status_code == 200 and "trust-TE-01-payments-2026-09.csv" in r.headers["Content-Disposition"]
     lines = r.data.decode("utf-8-sig").splitlines()
-    assert lines[1] == ("Needs attention,Change,Route,Created,Deployed,Detail,Name,ID (SAM account),Email,L4 manager,"
+    assert lines[1] == ("Contributing,Change,Route,Created,Deployed,Detail,Name,ID (SAM account),Email,L4 manager,"
                         "L4 manager email,L3 manager,L3 manager email,Team,Product family,As of (file uploaded),Link")
     assert len(lines) == 5 and ",Payments," in lines[2]
     team = t["rows"][0]["team_key"]
@@ -188,7 +188,7 @@ def test_each_metric_has_its_data_table_and_downloads(client):
     assert x.status_code == 200 and "spreadsheetml" in x.headers["Content-Type"]
     wb = load_workbook(io.BytesIO(x.data))
     assert wb.sheetnames[0] == "About" and "TE-01" in wb.sheetnames and "UN-02" in wb.sheetnames
-    assert [c.value for c in wb["TE-01"][2]][:3] == ["Needs attention", "Change", "Route"]
+    assert [c.value for c in wb["TE-01"][2]][:3] == ["Contributing", "Change", "Route"]
     assert client.get("/api/items/2026-09/nope.xlsx").status_code == 404
 
 

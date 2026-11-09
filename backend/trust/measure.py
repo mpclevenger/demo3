@@ -85,7 +85,7 @@ def te01(feeds, month):
                            "team": x.get("team"), "team_key": x.get("team_key"), "created": created,
                            "deployed": deployed, "link": x.get("link"), "who": x.get("who") or [],
                            "as_of": _asof(feeds, feed),
-                           "detail": _join(x.get("category") and f"{x['category']} change", x.get("status") and f"status {x['status']}",
+                           "detail": _join(_change_kind(x.get("category")), x.get("status") and f"status {x['status']}",
                                            x.get("risk_score"))})
 
     for x in feeds.get("tcc", {}).get("rows") or []:
@@ -102,6 +102,12 @@ def _asof(feeds, feed):
     (Checkmarx: its report date when Cyber gives one)."""
     v = feeds.get(feed) or {}
     return str(v.get("as_of") or v.get("uploaded_at") or "")[:10] or None
+
+
+def _change_kind(cat):
+    """'Planned' -> 'Planned change'; a category that already says change stays as it is."""
+    cat = (cat or "").strip()
+    return "" if not cat else cat if cat.lower().endswith("change") else f"{cat} change"
 
 
 def _join(*parts):
@@ -138,7 +144,7 @@ def te02(feeds, month):
                                "outcome": x.get("overall_outcome"), "person": x.get("person"), "team": x.get("team"), "team_key": x.get("team_key"),
                                "deployed": x.get("lastdeployment"), "link": x.get("link"), "who": x.get("who") or [],
                                "as_of": _asof(feeds, "tcc"),
-                               "detail": _join(x.get("category") and f"{x['category']} change", x.get("risk_score"),
+                               "detail": _join(_change_kind(x.get("category")), x.get("risk_score"),
                                                x.get("status") and f"status {x['status']}")})
     return out
 

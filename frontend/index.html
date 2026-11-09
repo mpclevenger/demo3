@@ -306,7 +306,7 @@ button.sm{padding:0 9px;font-size:12px}
 .cap,.legend,.foot12,.rule,.dt th,.flag,.lm,.pchip,.hm th span,.lim,.ticks,.xcard figcaption,.hm td .s,.wfam,.fsay,.ddt2 th,.ddt2 td{line-height:1.4}
 .cap,.foot12{max-width:100ch}
 .lftools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px;margin:6px 0 4px}.lfl{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}.lfl select{max-width:220px}.lfq input{width:300px;font:inherit;font-size:14px;padding:4px 8px;border:1px solid var(--border);border-radius:6px}.lfsum{margin:10px 0 4px;font-size:15px}.lft td{vertical-align:top;overflow-wrap:anywhere}.lft .tag{white-space:normal;display:inline-block;margin:0 0 3px;max-width:100%}.chip.ok{background:#d1f0dc;color:#0f5132}.chip.wait{background:#fde8b0;color:#664d03}.lff textarea{width:100%;max-width:640px}.okmsg{border-left:4px solid #15803d;background:#ecfdf3;padding:6px 12px;margin:8px 0}
-.itb{margin-top:4px}.itbh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin:0 0 4px}.tbf{display:inline-flex;gap:4px}.tbf button[aria-pressed=true]{background:#1f2937;color:#fff;border-color:#1f2937}.itt td{vertical-align:top}.itt tr.att td{background:#fdf1f1}.itt tr.att td:first-child{box-shadow:inset 3px 0 0 #b91c1c}.natt{font-weight:700;color:#b91c1c}.itt{font-size:13px}.itt td,.itt th{padding:5px 6px}.itt .wh{white-space:nowrap}.itt .wh+.wh{margin-top:4px}.itt .wh>*{display:block}.itt .wh b{color:var(--text);font-weight:600;font-size:13px}.itt .wh span:not(.cap){color:var(--text);font-size:13px;font-weight:400}.itt .wh .cap{font-size:11.5px}.itt td.dtl{min-width:150px;max-width:220px}.itt .nw{white-space:nowrap}.itbf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:6px}.itbf .noprint{display:inline-flex;align-items:center;gap:8px;margin-left:auto}.itbf a.btnlink{font-size:12px;padding:1px 9px;font-weight:400;border-color:var(--border);color:var(--link,#0a4db3)}
+.itb{margin-top:4px}.itbh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin:0 0 4px}.tbf{display:inline-flex;gap:4px}.tbf button[aria-pressed=true]{background:#1f2937;color:#fff;border-color:#1f2937}.itt td{vertical-align:top}.itt tr.att td{background:#eef2f7}.itt tr.att td:first-child{box-shadow:inset 3px 0 0 #475569}.itt tr.att.r td{background:#fdf1f1}.itt tr.att.r td:first-child{box-shadow:inset 3px 0 0 #b91c1c}.itt tr.att.a td{background:#fdf6e7}.itt tr.att.a td:first-child{box-shadow:inset 3px 0 0 #b45309}.natt{font-weight:700;color:var(--text)}.itt{font-size:13px}.itt td,.itt th{padding:5px 6px}.itt .wh{white-space:nowrap}.itt .wh+.wh{margin-top:4px}.itt .wh>*{display:block}.itt .wh b{color:var(--text);font-weight:600;font-size:13px}.itt .wh span:not(.cap){color:var(--text);font-size:13px;font-weight:400}.itt .wh .cap{font-size:11.5px}.itt td.dtl{min-width:150px;max-width:220px}.itt .nw{white-space:nowrap}.itbf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:6px}.itbf>span:last-child{margin-left:auto}.pgr{display:inline-flex;align-items:center;gap:8px}.pgr button[disabled]{opacity:.45;cursor:default}.itbf a.btnlink{font-size:12px;padding:1px 9px;font-weight:400;border-color:var(--border);color:var(--link,#0a4db3)}
 .grp>p.cap,.ftwrap~p.cap,.dt~p.cap,.ddscroll~p.cap{max-width:none}   /* notes under a table run its full width (owner, 9 Nov 2026) */
 .hm td.c:not(.tr) .s{display:inline;margin-left:6px}.hm td.tr .s{display:block;margin-left:0}
 .hm td.r .s,.hm td.a .s{color:#4a535d}
@@ -1122,6 +1122,12 @@ const PSCORED = PIDS.filter(p => !D.periods[p].meta.not_scored);              //
 const PREVIEW = PSCORED.find(p => D.periods[p].meta.status === 'Preview') || PSCORED[PSCORED.length - 1] || PIDS[PIDS.length - 1];   // open on the oldest open month with a score, else the newest scored, else the current month
 const OPEN_MONTH = (() => { try { const m = sessionStorage.getItem('trust_open_month'); sessionStorage.removeItem('trust_open_month'); return m; } catch (e) { return null; } })();
 const S = {p:(OPEN_MONTH && D.periods[OPEN_MONTH]) ? OPEN_MONTH : PREVIEW, r:(D.families || []).length ? 'cto' : 'tr', form:null, lastFam:null, snap:false};   // no families yet: open on Tech Risk, where files are uploaded (owner, 4 Nov 2026)
+/* A refresh keeps the month and the "View as" role (owner, 9 Nov 2026): kept in this browser tab only. The page
+   (route) is already in the address. parse() still checks the role against what the person may see. */
+try { const v = JSON.parse(sessionStorage.getItem('trust_view') || 'null');
+  if (v && v.p && D.periods[v.p]) S.p = v.p;
+  if (v && typeof v.r === 'string' && v.r) S.r = v.r; } catch (_) {}
+const keepView = () => { try { sessionStorage.setItem('trust_view', JSON.stringify({p:S.p, r:S.r})); } catch (_) {} };
 const COMMENTS = [];                       // this month's comments, loaded from the server (liveLoad)
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1947,7 +1953,7 @@ function trustWhy(fr){
 /* ---------- D-78 / B3: Where to focus selection, "Which ones", Explain, Challenge ---------- */
 const FOC = {which:new Set(), chOpen:null, sent:{}, bubAll:new Set(), allItems:new Set()};     // what the reader has open on the family page; keys are period|family|metric
 const focKey = (fid, id) => `${S.p}|${fid}|${id}`;
-const canSeeItems = () => isTR() || !!roleFam();             // D-88: Tech Risk, and the family lead on their own family page (the only family page they can open)
+const canSeeItems = () => true;               // owner, 9 Nov 2026: whoever is logged in can drill into the data (the server sends each person only the families they may see)             // D-88: Tech Risk, and the family lead on their own family page (the only family page they can open)
 function dropSize(id, x, t){                                // how far the metric moved in the worse direction since last month, as a share of its Green-to-Red span (counts: share of the denominator)
   const m = met(id); if (x.provisional) return 0;
   if (isPF(m)) { if (x.numerator == null || x.prior_numerator == null) return 0;
@@ -1971,9 +1977,12 @@ function pickFocus(fr, p){                                  // at most four, in 
 /* ---------- the data behind a metric (owner, 9 Nov 2026) ----------
    One table per metric with its own key details (config/metrics.json counting.columns), built by the back end into
    evidence.json (entry.table: columns, rows with cells, attention, team_key, link). Items that pull the number down
-   come first. The first 10 rows show, then "Show all"; "Needs attention only" narrows it; "Download this table" gets
+   come first. The first 10 rows show, then "Show all"; "Contributing" (ATT below) narrows it; "Download this table" gets
    the same rows as a CSV. Used under a metric row (See the data) and in the per-team drill-down. */
-const TBL = {all:new Set(), att:new Set()};
+const TBL = {allv:new Set(), pg:{}};         // tables showing All (else Contributing), and each table's page
+/* The words for the items behind a result (owner, 9 Nov 2026: neutral, not negative). Change them here; the
+   downloads' column name is ATTENTION_LABEL in backend/trust/evidence.py. */
+const ATT = {label:'Contributing', sum:n => `${nfmt(n)} contributing to the result, listed first`, none:'none contributing'};
 const ROWS_SHOWN = 10;
 function itemTable(fid, mid, e, team){
   const t = e && e.table;
@@ -1981,21 +1990,26 @@ function itemTable(fid, mid, e, team){
   const k = `${fid}|${mid}|${team || ''}`, all = team ? t.rows.filter(r => r.team_key === team) : t.rows;
   if (!all.length) return '<p class="cap" style="margin:0">No items for this team.</p>';
   const it = (e.items[0] || {}).item_type || 'item', noun = n => n === 1 ? it : it + 's';
-  const nAtt = all.filter(r => r.attention).length, onlyAtt = TBL.att.has(k) && nAtt > 0;
-  const rows = onlyAtt ? all.filter(r => r.attention) : all, N = rows.length, showAll = TBL.all.has(k), shown = showAll ? rows : rows.slice(0, ROWS_SHOWN);
-  const filt = S.snap || !nAtt || nAtt === all.length ? '' : `<span class="tbf noprint" role="group" aria-label="Which rows to show"><button type="button" class="sm" data-act="tbl-att" data-k="${esc(k)}" data-dd="ta:${esc(k)}" aria-pressed="${!onlyAtt}">All ${nfmt(all.length)}</button><button type="button" class="sm" data-act="tbl-att" data-k="${esc(k)}" data-dd="tb:${esc(k)}" aria-pressed="${onlyAtt}">Needs attention ${nfmt(nAtt)}</button></span>`;
-  const sum = `${nfmt(all.length)} ${noun(all.length)}${team ? ` from ${esc(subLabel(team))}` : ''} · ${nAtt ? `${nfmt(nAtt)} ${nAtt === 1 ? 'needs' : 'need'} attention, listed first` : 'none needs attention'}`;
+  /* owner, 9 Nov 2026: Contributing is the default view (worst first, ranked by the back end); All on request */
+  const nAtt = all.filter(r => r.attention).length, onlyAtt = nAtt > 0 && !TBL.allv.has(k);
+  const rows = onlyAtt ? all.filter(r => r.attention) : all, N = rows.length;
+  const pages = Math.max(1, Math.ceil(N / ROWS_SHOWN)), pg = Math.min(TBL.pg[k] || 0, pages - 1);
+  const shown = S.snap ? rows : rows.slice(pg * ROWS_SHOWN, (pg + 1) * ROWS_SHOWN);
+  const filt = S.snap || !nAtt || nAtt === all.length ? '' : `<span class="tbf noprint" role="group" aria-label="Which rows to show"><button type="button" class="sm" data-act="tbl-view" data-v="c" data-k="${esc(k)}" data-dd="tc:${esc(k)}" aria-pressed="${onlyAtt}">${ATT.label} ${nfmt(nAtt)}</button><button type="button" class="sm" data-act="tbl-view" data-v="a" data-k="${esc(k)}" data-dd="ta:${esc(k)}" aria-pressed="${!onlyAtt}">All ${nfmt(all.length)}</button></span>`;
+  const sum = `${nfmt(all.length)} ${noun(all.length)}${team ? ` from ${esc(subLabel(team))}` : ''} · ${nAtt ? ATT.sum(nAtt) : ATT.none}`;
   const ty = t.types || [], cell = (c, j, r) => j ? (ty[j] === 'date' && c ? `<span class="nw">${fd(c)}</span>` : esc(c)) || '<span class="muted">—</span>' : r.link && /^https?:\/\//i.test(r.link) ? `<a href="${esc(r.link)}" target="_blank" rel="noopener"><b>${esc(c)}</b></a>` : `<b>${esc(c)}</b>`;
   const dash = '<span class="muted">—</span>', ppl = (r, f) => (r.who || []).length ? r.who.map(f).join('') : dash;
   const person = w => `<div class="wh"><b>${esc(w.name || w.sam || w.email)}</b>${w.name && w.sam ? `<span class="cap">${esc(w.sam)}</span>` : ''}${(w.name || w.sam) && w.email ? `<span class="cap">${esc(w.email)}</span>` : ''}</div>`;
-  const body = shown.map(r => `<tr${r.attention ? ' class="att"' : ''}><td>${r.attention ? '<span class="natt">Yes</span>' : '<span class="muted">No</span>'}</td>${r.cells.map((c, j) => `<td>${cell(c, j, r)}</td>`).join('')}`
+  /* contributing rows keep the metric's colour (owner, 9 Nov 2026): Red or Amber; a Green metric's stay neutral */
+  const mst = ((((P().families || {})[fid] || {}).metrics || {})[mid] || {}).status, tint = mst === 'Red' ? ' att r' : mst === 'Amber' ? ' att a' : ' att';
+  const body = shown.map(r => `<tr${r.attention ? ` class="${tint.trim()}"` : ''}>${r.cells.map((c, j) => `<td>${cell(c, j, r)}</td>`).join('')}`
     + `<td class="dtl">${esc(r.detail) || dash}</td><td>${ppl(r, person)}</td><td>${(r.who || []).some(w => w.l4 || w.l3) ? r.who.map(w => `<div class="wh">${w.l4 ? `<span>L4 ${esc(w.l4)}</span>${w.l4_email ? `<span class="cap">${esc(w.l4_email)}</span>` : ''}` : ''}${w.l3 ? `<span class="cap">L3 ${esc(w.l3)}</span>` : ''}</div>`).join('') : dash}</td><td class="nw">${r.as_of ? fd(r.as_of) : dash}</td></tr>`).join('');
-  const more = N > ROWS_SHOWN && !S.snap ? `<button type="button" class="sm" data-act="tbl-all" data-k="${esc(k)}" data-dd="tl:${esc(k)}" aria-expanded="${showAll}">${showAll ? `Show the first ${ROWS_SHOWN}` : `Show all ${nfmt(N)}`}</button>` : '';
+  const from = pg * ROWS_SHOWN + 1, to = Math.min(N, (pg + 1) * ROWS_SHOWN);
+  const pager = S.snap || pages < 2 ? '' : `<span class="pgr" role="group" aria-label="Pages"><button type="button" class="sm" data-act="tbl-pg" data-d="-1" data-k="${esc(k)}" data-dd="pp:${esc(k)}" ${pg === 0 ? 'disabled' : ''} aria-label="Previous ${ROWS_SHOWN} rows">‹ Previous</button><span class="cap" aria-live="polite">${nfmt(from)}–${nfmt(to)} of ${nfmt(N)} · page ${pg + 1} of ${pages}</span><button type="button" class="sm" data-act="tbl-pg" data-d="1" data-k="${esc(k)}" data-dd="pn:${esc(k)}" ${pg >= pages - 1 ? 'disabled' : ''} aria-label="Next ${ROWS_SHOWN} rows">Next ›</button></span>`;
   const dl = canDl(fid) && !S.snap ? `<a class="btnlink sm" href="/api/items/${encodeURIComponent(S.p)}/${encodeURIComponent(fid)}/${encodeURIComponent(mid)}.csv?${team ? 'team=' + encodeURIComponent(team) + '&' : ''}by=${encodeURIComponent(LIVE.by || '')}" download>Download this table (.csv)</a>` : '';
-  const shownTxt = N > shown.length ? `<span class="cap">Showing ${shown.length} of ${nfmt(N)}</span>` : '';
   return `<div class="itb"><div class="itbh"><span class="cap">${sum}</span>${filt}</div>
-    <div class="ddscroll"><table class="dt ddt2 itt"><caption class="sr-only">The data behind ${esc(met(mid).name)}</caption><thead><tr><th>Needs attention</th>${t.columns.map(h => `<th>${esc(h)}</th>`).join('')}<th>Detail</th><th>Person</th><th>Managers (L4, L3)</th><th>As of</th></tr></thead><tbody>${body}</tbody></table></div>
-    ${shownTxt || more || dl ? `<div class="itbf">${shownTxt}${more || dl ? `<span class="noprint">${more}${dl}</span>` : ''}</div>` : ''}</div>`;
+    <div class="ddscroll"><table class="dt ddt2 itt"><caption class="sr-only">The data behind ${esc(met(mid).name)}${onlyAtt ? `: the ${ATT.label.toLowerCase()} items, worst first` : ''}</caption><thead><tr>${t.columns.map(h => `<th>${esc(h)}</th>`).join('')}<th>Detail</th><th>Person</th><th>Managers (L4, L3)</th><th>As of</th></tr></thead><tbody>${body}</tbody></table></div>
+    ${pager || dl ? `<div class="itbf noprint">${pager}${dl ? `<span>${dl}</span>` : ''}</div>` : ''}</div>`;
 }
 function whichPanel(fid, id, x){
   if (!FOC.which.has(focKey(fid, id))) return '';
@@ -2010,7 +2024,7 @@ function focusActs(fid, id){
   if (S.snap) return '';
   const k = focKey(fid, id), op = FOC.which.has(k), exOpen = S.form === id && S.formWhere === 'a', chOpen = FOC.chOpen === k;
   const nm = esc(met(id).name);
-  return `<span class="facts noprint">${isCTO() ? '' : `<button type="button" class="sm" data-act="foc-which" data-id="${id}" data-dd="w|${id}" aria-expanded="${op}" aria-controls="whp-${id}">See the data ${op ? '▴' : '▾'}</button>`}`
+  return `<span class="facts noprint">${`<button type="button" class="sm" data-act="foc-which" data-id="${id}" data-dd="w|${id}" aria-expanded="${op}" aria-controls="whp-${id}">See the data ${op ? '▴' : '▾'}</button>`}`
     + (isCTO() || !may('comment', fid) ? '' : `<button type="button" class="sm" data-act="open" data-m="${id}" data-w="a" aria-expanded="${exOpen}" aria-label="Explain: ${nm}">Explain</button><button type="button" class="sm" data-act="foc-ch" data-id="${id}" data-dd="c|${id}" aria-expanded="${chOpen}" aria-controls="chf-${id}" aria-label="Challenge this number: ${nm}">Challenge this number</button>`) + '</span>';
 }
 function challengeForm(fid, id){
@@ -2127,7 +2141,7 @@ function vFamily(fid){
   const needTxt = (S.snap || isCTO() || p.meta.status === 'Locked' || !may('comment', fid)) ? '' : owe.length
     ? `What we need from you ${('before the month is locked')}: explain ${owe.length} newly Red ${owe.length === 1 ? 'metric' : 'metrics'} — ${esc(nameTxt)}. ${('Commentary closes when Tech Risk locks the month.')}`
     : `What we need from you ${('before the month is locked')}: nothing outstanding. ${('Commentary closes when Tech Risk locks the month.')}`;
-  const bar = S.snap ? '' : `<div class="abar noprint">${needTxt ? `<span class="need1${owe.length ? ' open' : ''}">${needTxt}</span>` : ''}${may('download', fid) ? `<button type="button" class="sm" data-act="dl-open" data-dl="open" aria-expanded="${DL.open}" aria-controls="dlp">Download my data</button>` : ''}${snapBtn()}</div>${!may('comment', fid) && roSay() ? `<p class="cap noprint" style="margin:6px 0 0">${isCTO() || (ME && !ME.read_only) ? 'Read only: explanations and queries are added on family pages by the family’s own people and Tech Risk.' : roSay()}</p>` : ''}`;
+  const bar = S.snap ? '' : `<div class="abar noprint">${needTxt ? `<span class="need1${owe.length ? ' open' : ''}">${needTxt}</span>` : ''}${may('download', fid) ? `<button type="button" class="sm" data-act="dl-open" data-dl="open" aria-expanded="${DL.open}" aria-controls="dlp">Download the data</button>` : ''}${snapBtn()}</div>${!may('comment', fid) && roSay() ? `<p class="cap noprint" style="margin:6px 0 0">${isCTO() || (ME && !ME.read_only) ? 'Read only: explanations and queries are added on family pages by the family’s own people and Tech Risk.' : roSay()}</p>` : ''}`;
   const {shown} = pickFocus(fr, p);
   /* explanations */
   const cs = famCards(fid);
@@ -2464,7 +2478,7 @@ const niceNote = n => String(n || '').replace(/^([a-z][a-z0-9_]*):/, (m, k) => i
 const LIVE = ({state:{}, comments:{}, msg:null, err:null, busy:false, confirmLock:false,
   by:(() => { try { return localStorage.getItem('trust_by') || ''; } catch (e) { return ''; } })()});
 const ME = (D.access) && D.access.enforced ? D.access.me : null;      // signed in through the add-on: roles come from the server
-if (ME) { LIVE.by = ME.name; S.r = ME.page_role; }
+if (ME) { LIVE.by = ME.name; if (!ME.can.run_month || !(() => { try { return sessionStorage.getItem('trust_view'); } catch (_) { return null; } })()) S.r = ME.page_role; }   // Tech Risk keeps the View as role they chose across a refresh (owner, 9 Nov 2026)
 const byField = st => ME ? `<input type="hidden" name="by" value="${esc(ME.name)}">` : `<label${st ? ` style="${st}"` : ''}>Your name<input name="by" value="${esc(LIVE.by)}" autocomplete="name" maxlength="100" required></label>`;
 /* What this person may do (mirrors backend/trust/access.py `can`). Roles off (ME is null): everything, as before. */
 const may = (action, fid) => {
@@ -2473,7 +2487,7 @@ const may = (action, fid) => {
   if (action === 'run_month' || action === 'propose' || action === 'decide') return !!c[action];
   if (action === 'console_read') return !!c.console;
   if (action === 'close') return tr;
-  if (action === 'download') return tr || (fid ? ME.lead_of.includes(fid) : ME.lead_of.length > 0);
+  if (action === 'download') return tr || (ME.roles || []).some(r => r !== 'family_lead' && r !== 'family_member') || (fid ? ME.lead_of.includes(fid) || ME.member_of.includes(fid) : ME.lead_of.length + ME.member_of.length > 0);   // owner, 9 Nov 2026: whoever can see it can export it
   if (action === 'reply') return tr || (fid ? ME.lead_of.includes(fid) : ME.lead_of.length > 0);
   if (action === 'comment') return tr || (fid ? ME.lead_of.includes(fid) || ME.member_of.includes(fid) : ME.lead_of.length + ME.member_of.length > 0);
   return false;
@@ -3284,7 +3298,7 @@ function chrome(route){
   $('#chrome').innerHTML = `<header class="top"><div class="wrap"><h1 class="sitet"><a class="mark" href="${href('/')}">TRUST scorecard</a></h1><span class="env">${esc(D.env_label || 'Live data')}</span><span class="sp"></span>
     <select id="month" aria-label="Month">${Object.values(D.periods).map(x => `<option value="${x.meta.id}" ${x.meta.id === S.p ? 'selected' : ''}>${x.meta.label}</option>`).join('')}</select>
     <span class="pchip ${m.status === 'Preview' ? 'pv' : 'lk'}">${m.status === 'Preview' ? 'Preview — not locked' : 'Locked ' + fd(m.locked_at)}</span>
-    ${pick ? `<select id="role" aria-label="View as">${roleOpts}</select>` : `<span class="cap" title="${esc(ME.role_names.join(', '))}">${esc(ME.name)}</span>`}</div></header>${D.test_env ? '<div class="banner noprint" role="note" style="margin:0;border-radius:0;background:#fff3cd;border-color:#8a5a00">TEST environment · synthetic data. Nothing here is real: the families, people, files and scores are made up so the site can be tried out.</div>' : ''}${(!(D.access && D.access.enforced)) ? '<div class="banner noprint" role="note" style="margin:0;border-radius:0">Access isn’t set up yet: anyone who reaches this page can see and do everything. Tech Risk sets this up before go-live.</div>' : ''}${ME && ME.read_only ? '<div class="banner noprint" role="note" style="margin:0;border-radius:0">Read only: auditors can see everything but can’t change anything or download.</div>' : ''}
+    ${pick ? `<select id="role" aria-label="View as">${roleOpts}</select>` : `<span class="cap" title="${esc(ME.role_names.join(', '))}">${esc(ME.name)}</span>`}</div></header>${D.test_env ? '<div class="banner noprint" role="note" style="margin:0;border-radius:0;background:#fff3cd;border-color:#8a5a00">TEST environment · synthetic data. Nothing here is real: the families, people, files and scores are made up so the site can be tried out.</div>' : ''}${(!(D.access && D.access.enforced)) ? '<div class="banner noprint" role="note" style="margin:0;border-radius:0">Access isn’t set up yet: anyone who reaches this page can see and do everything. Tech Risk sets this up before go-live.</div>' : ''}${ME && ME.read_only ? '<div class="banner noprint" role="note" style="margin:0;border-radius:0">Read only: auditors can see and download everything but can’t change anything.</div>' : ''}
     ${route === 'console' || route === 'datasources' ? `<div class="band-console"><div class="wrap"><b>Tech Risk console${route === 'datasources' ? ' · Data sources' : ''}</b><span>${m.label} · ${m.status === 'Preview' ? (m.current_bd ? 'Business day ' + m.current_bd : 'Not locked yet') : 'Locked'}</span></div></div>` : ''}`;
   sidebar(route);
   $('#wm').innerHTML = (m.status === 'Preview' && S.snap && (route === 'family' || route === 'scorecard')) ? '<div class="wm" aria-hidden="true">PREVIEW — not locked</div>' : '';
@@ -3339,6 +3353,7 @@ function render(){
   pfSnap();
   {liveLoad(S.p);}
   let [route, arg] = parse(), fl = roleFam();
+  keepView();
   const redirect = (r, a) => { location.replace(href('/' + r + (a ? '/' + a : ''))); };
   if (route === 'preread') return redirect('scorecard');
   if (route === 'method') return redirect('glossary');
@@ -3413,7 +3428,7 @@ document.addEventListener('click', e => {
     secSave(); S.keepScroll = true; render(); const n = document.querySelector(`.sgm[data-b="${c}"]`) || document.querySelector('#h-all'); if (n) n.focus({preventScroll:true}); return; }
   if (a === 'row-tog') { const k = focKey(parse()[1], b.dataset.m), was = famRowOpen(parse()[1], b.dataset.m);
     if (was) { FAMT.open.delete(k); FOC.which.delete(k); if (FOC.chOpen === k) FOC.chOpen = null; if (S.form === b.dataset.m) S.form = null; DDS.l1.delete('l|' + b.dataset.m); delete FOC.sent[k + '|ex']; delete FOC.sent[k + '|ch']; }
-    else { FAMT.open.add(k); if (!isCTO()) { FOC.which.add(k); evLoad(); } }     // the items table shows straight away (owner, 6 Nov 2026)
+    else { FAMT.open.add(k); FOC.which.add(k); evLoad(); }     // the items table shows straight away (owner, 6 Nov 2026)
     S.keepScroll = true; render(); const n = document.querySelector(`[data-act="row-tog"][data-m="${b.dataset.m}"]`); if (n) n.focus({preventScroll:true}); return; }
   if (a === 'row-close-all') { const pre = `${S.p}|${parse()[1]}|`;
     [FAMT.open, FOC.which, FOC.allItems].forEach(set => [...set].filter(k => k.startsWith(pre)).forEach(k => set.delete(k)));
@@ -3443,9 +3458,11 @@ document.addEventListener('click', e => {
     if (S.form && S.formWhere === 'a' && !draft) S.form = null;          // an explanation being typed stays open
     [...DDS.l1].filter(k => k.startsWith('a|')).forEach(k => DDS.l1.delete(k));
     DDS.focus = null; secSave(); S.keepScroll = true; render(); secRestore(); const h = document.getElementById('h-att'); if (h) { h.tabIndex = -1; h.focus({preventScroll:true}); } return; }
-  if (a === 'tbl-att' || a === 'tbl-all') { const set = a === 'tbl-att' ? TBL.att : TBL.all, k = b.dataset.k;
-    if (a === 'tbl-att') { if ((b.dataset.dd || '').startsWith('tb:')) set.add(k); else set.delete(k); TBL.all.delete(k); } else if (set.has(k)) set.delete(k); else set.add(k);
-    DDS.focus = b.dataset.dd; secSave(); S.keepScroll = true; render(); secRestore(); ddFocus(); return; }
+  if (a === 'tbl-view' || a === 'tbl-pg') { const k = b.dataset.k;
+    if (a === 'tbl-view') { if (b.dataset.v === 'a') TBL.allv.add(k); else TBL.allv.delete(k); TBL.pg[k] = 0; } else TBL.pg[k] = Math.max(0, (TBL.pg[k] || 0) + +b.dataset.d);
+    DDS.focus = b.dataset.dd; secSave(); S.keepScroll = true; render(); secRestore(); ddFocus();
+    if (a === 'tbl-pg' && b.disabled !== undefined) { const nb = document.querySelector(`[data-dd="${CSS.escape(b.dataset.dd)}"]`); if (nb && nb.disabled) { const o = document.querySelector(`[data-dd="${CSS.escape((b.dataset.d === '1' ? 'pp:' : 'pn:') + k)}"]`); if (o) o.focus({preventScroll:true}); } }
+    return; }
   if (a === 'foc-which') { const k = focKey(parse()[1], b.dataset.id); if (FOC.which.has(k)) FOC.which.delete(k); else { FOC.which.add(k); evLoad(); } DDS.focus = b.dataset.dd; secSave(); S.keepScroll = true; render(); secRestore(); ddFocus(); return; }
   if (a === 'foc-ch') { const k = focKey(parse()[1], b.dataset.id); FOC.chOpen = FOC.chOpen === k ? null : k; S.form = null; S.keepScroll = true; render(); const t = document.getElementById('cht-' + b.dataset.id); if (t) t.focus(); else { const o = document.querySelector(`[data-dd="c|${b.dataset.id}"]`); if (o) o.focus({preventScroll:true}); } return; }
   if (a === 'foc-ch-cancel') { FOC.chOpen = null; S.keepScroll = true; render(); const o = document.querySelector(`[data-dd="c|${b.dataset.id}"]`); if (o) o.focus({preventScroll:true}); return; }
