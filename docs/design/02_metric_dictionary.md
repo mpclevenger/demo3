@@ -1,5 +1,7 @@
 # TRUST Scorecard — Metric Dictionary (v0.6 DRAFT)
 
+> **Owner, 8 Nov 2026: the live definitions are in `config/metrics.json`** (the cards the site shows, known limits, status). This document keeps the reasoning and history; where the two differ, the file is what the site uses.
+
 > **v0.6 (3 Nov 2026): brought in line with what v1 actually measures.** Section 0 describes the nine metrics TRUST measures today, as the code counts them, and wins over anything later in this document. The dictionary holds 20 metrics. The other 11 are not measured: ten are **planned** (TR-01, TR-03, DA-01, RE-02, SE-03, SE-04, SE-05, SE-06, TE-03, TE-04) and one is **coming soon** (UN-03). Their cards (Section 3) are the design, not yet checked against real data. TR-02, RE-01 and RE-03 were added to the measured set on 4 Nov 2026, and TR-01 on 6 Nov 2026 (so ten measured, nine planned besides UN-03); their cards are in Section 3 under their building blocks. Made-up starting values ("proposed" thresholds) are removed: a planned metric gets its tolerance thresholds when it is measured. The live page (Metric dictionary) shows the same wording as this document.
 
 > "A product our clients can trust is Traceable, Resilient, Uninterrupted, Secure, and Tested."
@@ -24,12 +26,12 @@
 - **Where the numbers come from.** Tech Risk uploads each provider's own export on the website. Each file loads on its own. TRUST places every row with a family through HR (the person's manager chain) and the product family owners file, then counts per family. Rows it can't place are shown as "Not yet mapped" and never scored.
 - **Every month stands alone.** Nothing is rolled up over several months.
 - **Tolerance thresholds.**
-  - **Policy:** a fixed Green tolerance and Red limit from `config/thresholds.json`. Today only TE-01 (Green tolerance 80.0%, Red limit 60.0%).
+  - **Policy:** a fixed Green tolerance and Red limit from `config/thresholds.json`. None of the measured metrics today (TE-01 moved to the prevailing median, owner 8 Nov 2026).
   - **Prevailing median:** worked out afresh each month from that month's family results. Green tolerance = the median family. Red limit = the median plus or minus the Amber band. The band is 1.5 × the usual spread between families (the middle half, once 4 or more families have a result) and never less than 5 percentage points (UN-01: 1 incident). Fewer than 5 families with a result (setting `min_families_for_threshold`, owner 4 Nov 2026): no threshold, and the metric shows "No tolerance threshold yet" and isn't scored that month. TE-02, UN-01, UN-02, SE-01 and SE-02 use it.
   - **Calibration (owner, 3 Nov 2026):** the prevailing median is used once to set the tolerance thresholds, pooling several real months (`python manage.py calibrate`), and they are then fixed and reviewed each quarter by Tech Risk. Until a metric is calibrated it is worked out each month as above.
   - There are no threshold versions or approval records yet. The thresholds have not been through formal approval.
 - **Status.** Green tolerance is inclusive; the Red limit is exclusive; between the two is Amber. Judged on the value rounded to 1 decimal. A metric scores by its colour (Green 100, Amber 50, Red 0), not by how far it is from a line: just past the Red limit scores the same 0 as far past it.
-- **Behind peers.** Only for metrics with a Policy tolerance threshold (today TE-01): a family at least 15 percentage points worse than the median family, with at least 5 families scored. It adds a watch-list entry only. Prevailing-median metrics are not flagged, because their colour already compares each family with the median.
+- **Behind peers.** **Off for now (owner, 8 Nov 2026; setting `behind_peers_flag` in `config/thresholds.json`):** every measured metric uses the prevailing median, which already compares each family with the median. When switched on, it applies only to metrics with a Policy tolerance threshold: a family at least 15 percentage points worse than the median family, with at least 5 families scored. It adds a watch-list entry only. Prevailing-median metrics are not flagged, because their colour already compares each family with the median.
 - **Minimum population.** UN-02 needs at least 3 open actions per family (owner: stays 3, 4 Nov 2026); below that the result is "Low confidence" (shown, not scored). Every other measured metric is scored from the first item.
 - **Nothing to measure.** UN-02 with no open actions is Green (0%) (D-100), shown as "Green, nothing open" so it isn't read as a checked result (owner, 4 Nov 2026). UN-01 with no incidents is a count of 0. TE-01, TE-02, SE-01 and SE-02 with nothing to count are not scored.
 - **Time.** New York time throughout.
@@ -38,7 +40,7 @@
 
 | ID | Metric | Better when | Result | Threshold basis | Population (in short) | Month |
 |---|---|---|---|---|---|---|
-| TE-01 | Change ticket adoption | Higher | % of production deployments through TCC approved before deployment | Policy: Green ≥ 80.0%, Red < 60.0% | Deployed TCC changes | Month the ticket was created |
+| TE-01 | Change ticket adoption | Higher | % of deployed production changes that went through TCC | Prevailing median | Deployed TCC and Non-TCC changes | Month the ticket was created |
 | TE-02 | Release revert rate (7 days) | Lower | % of production releases backed out | Prevailing median | Deployed TCC releases with a known outcome | Month the 7-day window ends |
 | UN-01 | Critical and SWE incidents | Lower | Count of unique incidents (until the app inventory gives "per 10 apps") | Prevailing median, band at least 1 incident | Postmortem file, DEFCON 1–5 | Month the incident ended |
 | UN-02 | Postmortem actions overdue rate | Lower | % of open actions past their due date | Prevailing median | Actions open at month-end | Snapshot at month-end |
@@ -53,21 +55,25 @@ UN-03 (client incidents) is **Coming soon**: there is no source for client incid
 ### 0.3 Cards for the measured metrics
 
 #### TE-01 Change ticket adoption
-- **Risk it watches:** every production deployment should trace to an approved change. Without that link, unauthorised or unreviewed changes can reach production. This is the core program-change control.
-- **Value:** production deployments through TCC approved before deployment ÷ production deployments through TCC × 100.
-- **Population:** production deployments raised through TCC (the change tool) whose ticket was created in the month. A deployment counts as approved when it is a Standard change, or when an approval (not Obsoleted or Rejected) was recorded before the last deployment. Changes made outside TCC are left to TE-06, not counted here.
-- **Exclusions:** tickets with no production deployment recorded.
-- **Time basis:** counted in the month the change ticket was created (the last deployment date is used only when the created date is blank). TE-02 counts releases later, when their 7-day window closes, so the two can cover different changes in one month.
-- **Minimum population:** scored from the first item. **Nothing to measure:** no deployments, not scored.
-- **Scoring:** Policy tolerance threshold, Green ≥ 80.0%, Red < 60.0%. Behind-peers flag at 15 percentage points.
+*Owner, 8 Nov 2026: was "approved before deployment" (TCC changes only, Policy 80 / 60). Now the share of all deployed changes that went through TCC, judged against the prevailing median.*
+- **Risk it watches:** every production change should go through TCC, the firm's change control route. A change made outside TCC skips its review and approval steps, so unreviewed changes can reach production. This is the core program-change control.
+- **Value:** deployed changes through TCC ÷ all deployed changes (TCC + Non-TCC) × 100.
+- **Population:** production changes deployed in the month, from both the TCC and the Non-TCC exports, counted in the month the ticket was created. A change counts as through TCC when it is in the TCC export, Standard changes included. Non-TCC changes count as deployed when their Status is Completed, Resolved, Monitoring or Client. A change in both exports counts once, as TCC.
+- **Exclusions:** TCC changes with no production deployment recorded; Non-TCC changes with a status that doesn't mean deployed.
+- **Needs:** both exports for the month. With only one, the metric shows No data (not a false 100%).
+- **Time basis:** counted in the month the change ticket was created (TCC: the last deployment date is used only when the created date is blank; Non-TCC: the last updated date). TE-02 counts releases later, when their 7-day window closes, so the two can cover different changes in one month.
+- **Minimum population:** scored from the first item. **Nothing to measure:** no deployed changes, not scored.
+- **Scoring:** prevailing median (needs at least 5 families with a result).
 - **Limitations:**
 
 | Limitation | Mitigation | Status |
 |---|---|---|
-| A change is approved after it was deployed. | The approval time must be before the deployment time, or it doesn't count. | Mitigated |
-| The list of approval codes isn't confirmed yet. | Working rule until Change Management confirms the list (Q-TCC-03). | Partly mitigated |
+| Going through TCC doesn't show that a change was approved before it was deployed. | None yet in this metric. The TCC file still carries the approval time. | No mitigation yet |
+| The Non-TCC export has no deployment date. | Month from Created Date, the same rule as TCC (Q-NTCC-01). | Partly mitigated |
+| Which Non-TCC statuses mean deployed isn't confirmed. | Working rule: Completed, Resolved, Monitoring, Client (Q-NTCC-02). | Partly mitigated |
+| A Non-TCC change with no author email can't be placed with a family. | Shown as Not yet mapped on the firm page, never hidden. | Partly mitigated |
+| A change could appear in both exports. | Counted once, as TCC, and listed. | Mitigated |
 | Many deployments can be linked to one general ticket. | None yet. | No mitigation yet |
-| A change made outside TCC never reaches this count. | Planned: TE-06. | No mitigation yet |
 
 #### TE-02 Release revert rate (7 days)
 - **Risk it watches:** releases that have to be backed out point to weak pre-production testing, and bad releases that reach production can affect clients.
@@ -203,7 +209,7 @@ Status: **Measured** (scored today), **Coming soon** (no source yet) or **Planne
 | SE-04 | CyberArk vaulting | IAM (Cyber) | More vaulted | Accounts (count) | Planned | Pass/fail (1.13) |
 | SE-05 | SailPoint governance | IAM (Cyber) | More governed | Apps (count) | Planned | Pass/fail (1.13) |
 | SE-06 | EOL components (platform-hosted) | Hosting platform | Lower | % of platform-hosted apps | Planned | Not set; override: Tier 0/1 internet-facing app with EOL = Red |
-| TE-01 | Change ticket adoption | Change | Higher | % of production deployments | **Measured** | Policy: Green ≥ 80.0%, Red < 60.0% |
+| TE-01 | Change ticket adoption | Change | Higher | % of deployed changes through TCC | **Measured** | Prevailing median |
 | TE-02 | Release revert rate (7 days) | Change | Lower | % of production releases | **Measured** | Prevailing median |
 | TE-03 | Defect rate | Change | Lower | Defects per 100 releases | Planned | Not set |
 | TE-04 | AI-assisted commits rate | Change (GHES data) | n/a | % of commits | Planned | Information only, no threshold |
@@ -437,7 +443,7 @@ The CSF categories refer to NIST CSF 2.0 (Feb 2024). Scorecard metrics are not S
 |---|---|---|---|---|
 | OD-01 | Overdue denominator = open at month-end plus closed in the month (O-5). | SE-03, UN-02 | Scorecard owner | Decided; **not applicable yet** to UN-02 (no closed date in the file). SE-01/02 use Cyber's policy result instead. |
 | OD-02 | SE-01/02 Green tolerance 5.0%. | SE-01, SE-02 | Scorecard owner, with the CISO | **Superseded** (owner, 3 Nov): prevailing median from the month's data. |
-| OD-03 | TE-01 Green tolerance 80%; Red limit 60%. | TE-01 | Scorecard owner, with Change Mgmt | In use (Policy). Not yet formally approved. |
+| OD-03 | TE-01 Green tolerance 80%; Red limit 60%. | TE-01 | Scorecard owner, with Change Mgmt | **Closed** (owner, 8 Nov 2026): TE-01 now uses the prevailing median. |
 | OD-04 | Inclusive/exclusive convention. | All | Tech Risk | Built as stated in 1.2. |
 | OD-05 | Reporting timezone America/New_York. | All | Tech Risk | Built. |
 | OD-06 | Policy/standard references in Section 4. | All | Each provider, compiled by Tech Risk | Open |

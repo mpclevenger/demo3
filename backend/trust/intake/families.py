@@ -98,10 +98,7 @@ def read(raw_bytes):
         for e in emails:
             owner_of.setdefault(e, []).append(name)
 
-    for e, fams in owner_of.items():
-        if len(fams) > 1:
-            notes.append(f"{e} owns more than one family ({', '.join(fams)}); people under them can't be "
-                         f"placed until each person has one nearest owner")
+    # A lead of several families is fine (owner, 6 Nov 2026): their people count for each (see linking).
     # band is optional (owner, 3 Nov 2026): a missing band means product, without a note to acknowledge every month
     summary = dict(families=len(rows), owners=sum(len(x["owner_emails"]) for x in rows), set_aside=len(set_aside))
     return dict(rows=rows, set_aside=set_aside, notes=notes, summary=summary)

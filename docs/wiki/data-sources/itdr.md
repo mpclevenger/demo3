@@ -20,7 +20,7 @@ Other columns are dropped at upload. The column names (and close spellings) are 
 - **Header.** Rows 1 and 2 are read as one header when that finds more of the expected columns than row 1 alone; otherwise row 2 is data. So a file sent with a one-row header still works.
 - **Ref.** Blank, not a number, or already used on an earlier row: the row is set aside with the reason (the first row with a Ref is kept). Excel's `12.0` reads as 12.
 - **Application Name.** Extra spaces, line breaks and non-breaking spaces are tidied; nothing else is changed. Blank: the row is set aside. Two Refs with the same name are both kept and listed.
-- **Business Product Area.** Blank is kept as blank and counted.
+- **Business Product Area.** Blank is kept as blank and counted, for information only: an application the [app inventory](app_inventory.md) places doesn't need an area (owner, 6 Nov 2026). The warnings about blank or unmatched areas are written during the update, after the inventory has placed what it can, so they list only the applications still not placed.
 - **Recovery Tier.** Read loosely (`Tier 1`, `tier1`, `T1`, `1`). `TBC` (or TBD) stays TBC. Blank, or anything that isn't a tier (for example "Tier 6"), is kept as **Not given** and listed by Ref. Never guessed.
 - **Kept as a table.** At upload, the applications go into the table `itdr_application` (one row per application, tied to the upload). A new file for the month becomes the current list; the earlier one is kept. Without a database they are kept next to the file in `store/`.
 - **Family** (owner, 3 Nov 2026). At mapping, when the product family owners file is loaded, Business Product Area places the application:

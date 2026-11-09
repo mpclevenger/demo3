@@ -141,10 +141,11 @@ The CSV: one line per product family.
 **What is never guessed** (each shows as Not yet mapped, with a note):
 
 - An owner email that isn't in HR (or isn't in the CTO's line).
-- An owner listed under two families: the people under them can't be placed until it is fixed.
 - A person with no family owner above them.
 - A family with no owner email: nobody can be placed in it yet.
 - (Not a problem: the same family on several lines, one per lead. Its leads are combined, with no note.)
+
+**A lead of several families (owner, 6 Nov 2026).** When one person is listed as the lead of two or more families, the people under them count for **each** of those families: whoever is listed as the lead is what the data rolls up to, so the same numbers show for each family until the data is made more granular. How it works: those people are placed in one shared group (`shared:` + the family ids), and at scoring every one of the lead's families gets the group's results added to its own (`score_month.expand_shared`). The firm counts the group **once**, so firm results don't change. Rows that already say which family they belong to stay with that family only (for example an ITDR application whose Business Product Area is the family's name), so those families can still differ. Each family is counted in the prevailing median, so a lead of three families counts three times there. The mapping result has a "For information" note naming the lead and their families (nothing to acknowledge).
 
 
 ### Reporting on level-3 teams instead (owner, 3 Nov 2026)

@@ -108,7 +108,10 @@ def upload(feed, month, file_bytes, filename, uploaded_by, sharepoint_link=None,
         try:
             if feed == "hr_mapping" and families.is_json(file_bytes):   # product_line_owners.json (owner, 3 Nov 2026)
                 file_bytes = families.to_csv(file_bytes)
-            kept_bytes, info = keep_columns(file_bytes, feed, TABLE_FIELDS[feed], HEADER_ROWS.get(feed, 1))
+            if feed == "app_owner_members":         # can be very big: cut down one line at a time (6 Nov 2026)
+                kept_bytes, info = owner_groups.keep(file_bytes)
+            else:
+                kept_bytes, info = keep_columns(file_bytes, feed, TABLE_FIELDS[feed], HEADER_ROWS.get(feed, 1))
         except ValueError as err:           # not readable as a table: keep it as received, mapping says why
             kept_bytes, info = file_bytes, {"note": str(err)}
         extra = {"kept": info}

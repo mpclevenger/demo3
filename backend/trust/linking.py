@@ -9,6 +9,7 @@ UNATTRIBUTED, shown on Firm position as "Not yet mapped" (D-73). Nothing is drop
 from collections import defaultdict
 
 UNATTRIBUTED = "UNATTRIBUTED"
+SHARED = "shared:"           # a group of people whose lead leads several families (owner, 6 Nov 2026)
 
 
 def _lookup(table, key):
@@ -116,37 +117,45 @@ def families_from_owners(people, family_rows):
 
     Each owner is found in HR by email. A person belongs to the family of the **nearest owner
     above them, or themselves**, walking up the manager chain. Nobody is guessed: an owner not in
-    HR, an owner of two families, or a person with no owner above them leaves that person
-    UNATTRIBUTED (Not yet mapped), and the notes say why.
+    HR, or a person with no owner above them, leaves that person UNATTRIBUTED (Not yet mapped), and
+    the notes say why.
 
-    Returns dict(family_of_sam, family_of_email, families, notes).
+    **A lead of several families (owner, 6 Nov 2026):** the people under them are placed in one shared
+    group (family_id SHARED + the family ids joined by '+'), and every one of the lead's families gets
+    that group's results, so the same numbers show for each until the data is made more granular. The
+    firm counts the group once (score_month.expand_shared).
+
+    Returns dict(family_of_sam, family_of_email, families, shared={group id: [family ids]}, notes).
     """
     notes = []
     by_email = {p["email"]: p for p in people if p.get("email")}
     by_sam = {p["sam_account"]: p for p in people}
 
-    owner_family = {}            # owner SAM -> family_id, or None when they own more than one
+    owns = {}                    # owner SAM -> the families they lead, in file order
     for f in family_rows:
         for e in f["owner_emails"]:
             p = by_email.get(e)
             if p is None:
                 notes.append(f"{f['family']}: owner {e} isn't in the HR file (or isn't in the CTO's line)")
                 continue
-            sam = p["sam_account"]
-            if sam in owner_family and owner_family[sam] != f["family_id"]:
-                owner_family[sam] = None          # owns two families: can't choose
-            else:
-                owner_family.setdefault(sam, f["family_id"])
+            owns.setdefault(p["sam_account"], [])
+            if f["family_id"] not in owns[p["sam_account"]]:
+                owns[p["sam_account"]].append(f["family_id"])
+    owner_family, shared = {}, {}
+    for sam, fids in owns.items():
+        if len(fids) == 1:
+            owner_family[sam] = fids[0]
+        else:
+            g = SHARED + "+".join(sorted(fids))
+            owner_family[sam], shared[g] = g, sorted(fids)
 
-    family_of_sam, unplaced, blocked = {}, [], set()
+    family_of_sam, unplaced = {}, []
     for sam in by_sam:
         cur, steps, fam, seen = sam, 0, None, set()
         while cur and cur not in seen:
             seen.add(cur)
             if cur in owner_family:
                 fam = owner_family[cur]
-                if fam is None:
-                    blocked.add(cur)
                 break
             cur = by_sam[cur]["manager_sam"] if cur in by_sam else None
             steps += 1
@@ -155,8 +164,12 @@ def families_from_owners(people, family_rows):
         else:
             unplaced.append(sam)
 
-    for sam in sorted(blocked):
-        notes.append(f"{sam} owns more than one family, so the people under them are Not yet mapped")
+    names = {f["family_id"]: f["family"] for f in family_rows}
+    for sam, fids in owns.items():
+        if len(fids) > 1:
+            notes.append(f"For information: {sam} leads {len(fids)} families ({', '.join(names[x] for x in fids)}), so the "
+                         "people under them count for each of these families: their numbers are the same in each "
+                         "until the data says which family each item belongs to")
     if unplaced:
         notes.append(f"{len(unplaced)} {'person has' if len(unplaced) == 1 else 'people have'} no family owner above them "
                      f"(Not yet mapped): {', '.join(sorted(unplaced)[:15])}{' …' if len(unplaced) > 15 else ''}")
@@ -164,9 +177,11 @@ def families_from_owners(people, family_rows):
                        if p.get("email") and p["sam_account"] in family_of_sam}
     counts = {}
     for f in family_of_sam.values():
-        counts[f] = counts.get(f, 0) + 1
+        for x in shared.get(f, [f]):
+            counts[x] = counts.get(x, 0) + 1
     families = [{**f, "people": counts.get(f["family_id"], 0)} for f in family_rows]
-    return dict(family_of_sam=family_of_sam, family_of_email=family_of_email, families=families, notes=notes)
+    return dict(family_of_sam=family_of_sam, family_of_email=family_of_email, families=families, shared=shared,
+                notes=notes)
 
 
 GROUPINGS = ("product_family", "l3")

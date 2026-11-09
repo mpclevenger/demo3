@@ -28,9 +28,29 @@ def test_nearest_owner_above_wins():
     assert any("nobody.here@example.com isn't in the HR file" in n for n in p["notes"])
 
 
-def test_owner_of_two_families_is_not_guessed():
+def test_lead_of_two_families_counts_for_both():
+    """Owner, 6 Nov 2026: a lead of several families rolls up to each of them (same numbers in each)."""
     rows = F["rows"] + [{"family_id": "wealth", "family": "Wealth", "band": "product", "owner_emails": ["alex.moreno@example.com"]}]
     p = linking.families_from_owners(PEOPLE, rows)
-    assert "amoreno" not in p["family_of_sam"] and "slee" not in p["family_of_sam"]
+    g = linking.SHARED + "payments+wealth"
+    assert p["family_of_sam"]["amoreno"] == g and p["family_of_sam"]["slee"] == g
+    assert p["shared"] == {g: ["payments", "wealth"]}
     assert p["family_of_sam"]["pkim"] == "cards"                  # their own nearer owner still works
-    assert any("amoreno owns more than one family" in n for n in p["notes"])
+    people = {x["family_id"]: x["people"] for x in p["families"]}
+    assert people["payments"] == people["wealth"] == 2
+    assert any(n.startswith("For information: amoreno leads 2 families (Payments, Wealth)") for n in p["notes"])
+
+
+def test_shared_group_counts_once_for_the_firm_and_fully_for_each_family():
+    from trust import score_month
+    g = linking.SHARED + "payments+wealth"
+    counts = {"TE-01": {g: {"numerator": 3, "denominator": 4, "items": [{"id": "c1"}]},
+                        "payments": {"numerator": 1, "denominator": 1, "items": [{"id": "c2"}]}},
+              "UN-01": {g: {"numerator": 1, "items": [{"id": "INC-1"}]},
+                        "payments": {"numerator": 1, "items": [{"id": "INC-1"}]}, "_firm": {"numerator": 1}}}
+    f = score_month.expand_shared(counts, {g: ["payments", "wealth"]})
+    assert (f["TE-01"]["payments"]["numerator"], f["TE-01"]["payments"]["denominator"]) == (4, 5)
+    assert (f["TE-01"]["wealth"]["numerator"], f["TE-01"]["wealth"]["denominator"]) == (3, 4)
+    assert g not in f["TE-01"] and len(f["TE-01"]["payments"]["items"]) == 2
+    assert f["UN-01"]["payments"]["numerator"] == 1 and f["UN-01"]["wealth"]["numerator"] == 1   # one incident, once each
+    assert counts["TE-01"][g]["numerator"] == 3                   # the firm's counts are untouched

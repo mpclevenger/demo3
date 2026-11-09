@@ -101,4 +101,4 @@ def test_informational_notes_never_block_the_lock(seeded):
     assert lock.lock("2026-10", "Tech Risk")["status"] == "locked"          # the info notes didn't stop it
     period = storage.load_month("scored", "2026-10")["period"]
     assert period["files_needed"]["missing"] == [] and "tcc" in period["files_needed"]["needed"]
-    assert "ntcc" in period["files_needed"]["optional_received"]
+    assert "ntcc" in period["files_needed"]["needed"]                          # TE-01 needs both change files (owner, 8 Nov 2026)

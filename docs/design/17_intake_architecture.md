@@ -87,7 +87,7 @@ TRUST adapts to the files; the files never adapt to TRUST. The column lists in d
 | Action items CSV | `src_pm.raw_action_item` | Link formula kept as text; parsed to `item_ref` / URL | UN-02 | HR; postmortem file for scope (until loaded, all actions count, with a warning) |
 | Checkmarx SAST / SCA JSON (trailing commas accepted; violations comma-separated) | `src_cmx.raw_sast`, `src_cmx.raw_sca` | All fields TRUST uses | SE-01 / SE-02 pass/fail per repo (D-81, D-85) | Repo list → inventory (tiers) |
 | TCC CSV (33 cols) | `src_tcc.raw_tcc` | 4 not loaded | TE-01, TE-02, client-impact Red | HR |
-| Non-TCC CSV (12 cols) | `src_ntcc.raw_ntcc` | Title, department, assignees not loaded (to confirm) | None: read, not scored (TE-01 is TCC only; changes outside TCC are left to TE-06, not on the scorecard yet) | HR |
+| Non-TCC CSV (12 cols) | `src_ntcc.raw_ntcc` | Title, department, assignees not loaded (to confirm) | TE-01 denominator (changes outside TCC; owner, 8 Nov 2026) | HR |
 
 Open questions per file (closed date Q4, approval code list Q-TCC-03, timezone Q-TCC-15, Non-TCC deployment date Q-NTCC-01, report date from Cyber) are in the question bank. None of them stops a file from loading.
 

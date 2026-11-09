@@ -22,7 +22,7 @@ FIELDS = {f: (f,) for f in (
     "peer review recorded at (UTC)", "Approval recorded at (UTC)", "Outcome recorded at (UTC)")}
 
 # Which metric needs which fields: if one is missing, that metric shows No data for the month.
-NEEDS = {"TE-01": ("Ticket ID", "last deployment", "Approval recorded at (UTC)"),
+NEEDS = {"TE-01": ("Ticket ID", "last deployment"),     # owner, 8 Nov 2026: TE-01 no longer uses the approval time
          "TE-02": ("Ticket ID", "last deployment", "Overall outcome", "Outcome recorded at (UTC)")}
 
 # Known values, matched case-insensitively. Anything else is kept and noted.

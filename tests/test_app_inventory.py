@@ -94,9 +94,13 @@ def test_owner_groups_reader():
            b"DL@x.com,group,DL,old,o@x.com,Old,False,No,disabled account\n"
            b"gone@x.com,not found,,,,,,No,not found in AD\n")
     r = owner_groups.read(raw)
-    assert r["rows"][0]["owner_email"] == "dl@x.com" and r["rows"][0]["member_sam"] == "ab1" and r["rows"][0]["included"]
-    assert r["rows"][1]["included"] is False
-    assert r["summary"]["by_kind"] == {"group": 1, "not found": 1}
+    assert r["members"] == {"dl@x.com": [("ab1", "a@x.com", "DL")]}          # the disabled member is left out
+    assert r["kinds"] == {"dl@x.com": "group", "gone@x.com": "not found"}
+    assert r["summary"]["by_kind"] == {"group": 1, "not found": 1} and r["summary"]["left_out"] == 1
+    kept, info = owner_groups.keep(raw)
+    text = kept.decode()
+    assert "member_name" not in text and "Old" not in text and "gone@x.com" in text and info["members_left_out"] == 1
+    assert owner_groups.read(kept)["members"] == r["members"]
 
 
 @pytest.fixture
@@ -185,3 +189,22 @@ def test_tr01_counts_repos_linked_to_an_app():
         "Mapped to one app", "Not mapped to an app in the app inventory", "Mapped to 2 apps"]
     assert [evidence.describe("TR-01", it)["concern"] for it in r["items"]] == [False, True, False]
     assert measure.NEEDS_ALSO["TR-01"] == "app_inventory" and "TR-01" in measure.SWITCHABLE
+
+
+def test_blank_area_is_only_a_warning_when_the_inventory_doesnt_place_the_app(tmp_store):
+    """Owner, 6 Nov 2026: ITDR applications the app inventory places don't need a Business Product Area."""
+    itdr_csv = (b"Ref,Application Name,Business Product Area,Recovery Tier\n"
+                b"10,Payments Gateway,,Tier 1\n"          # blank area, but the inventory places it
+                b"11,Lonely App,,Tier 2\n")              # blank area, not in the inventory: still a warning
+    for feed, data, name in (("hr", (FIX / "hr_firmwide.csv").read_bytes(), "hr.csv"),
+                             ("hr_mapping", (FIX / "family_owners.csv").read_bytes(), "owners.csv"),
+                             ("itdr", itdr_csv, "itdr.csv"), ("app_inventory", INV, "app_inventory.csv")):
+        store.upload(feed, "2026-10", data, name, "Tester")
+    m = mapping.map_month("2026-10")
+    notes = m["feeds"]["itdr"]["notes"]
+    rows = {r["ref"]: r for r in m["feeds"]["itdr"]["rows"]}
+    assert rows[10]["family_id"] == "cards" and rows[10]["family_match"]["how"] == "app inventory"
+    assert any(n.startswith("1 application has no Business Product Area") for n in notes), notes
+    assert not any(n.startswith("2 applications have no Business Product Area") for n in notes)
+    assert any(n.startswith("For information: 1 of 2 ITDR applications were placed by the app inventory") for n in notes)
+    assert all(lock.is_informational("itdr", n) for n in notes if n.startswith("For information"))

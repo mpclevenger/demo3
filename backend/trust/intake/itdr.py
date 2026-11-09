@@ -104,7 +104,8 @@ def read(raw_bytes):
     if blank:
         notes.append(f"{blank} {'application has' if blank == 1 else 'applications have'} no Recovery Tier; kept as 'Not given'")
     if no_area:
-        notes.append(f"{no_area} {'application has' if no_area == 1 else 'applications have'} no Business Product Area")
+        notes.append(f"For information: {no_area} {'application has' if no_area == 1 else 'applications have'} no Business "
+                     "Product Area. That's fine for any the app inventory places; the update lists those still not placed")
     for refs in names.values():
         if len(refs) > 1:
             notes.append(f"The same application name is on Refs {', '.join(map(str, refs))}; each is kept as its own application")

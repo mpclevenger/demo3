@@ -15,7 +15,7 @@ import statistics
 from datetime import datetime, timedelta
 from decimal import Decimal as D, ROUND_HALF_UP
 
-from . import measure, scoring, storage, store
+from . import config, measure, scoring, storage, store
 from .intake.common import loads_tolerant
 from .linking import UNATTRIBUTED
 
@@ -37,10 +37,36 @@ def label(month):
 
 
 def template():
-    """The front end's built-in data: metric definitions, building blocks, dictionary, method page."""
+    """The front end's built-in data (building blocks, method page) plus every metric and its dictionary card,
+    which come from config/metrics.json (owner, 8 Nov 2026: one place to edit a metric)."""
     html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
     m = re.search(r'<script type="application/json" id="data">(.*?)</script>', html, re.S)
-    return json.loads(m.group(1))
+    tpl = json.loads(m.group(1))
+    defs = config.metrics()
+    parts = ("card", "known_limits", "wording", "counting", "status_note")
+    tpl["metrics"] = [dict(id=mid, **{k: v for k, v in x.items() if k not in parts and not k.startswith("_")})
+                      for mid, x in defs.items()]
+    tpl.setdefault("dictionary", {})["metrics"] = {mid: dictionary_card(x) for mid, x in defs.items()}
+    return tpl
+
+
+def dictionary_card(x):
+    """One metric's dictionary card as the page reads it: the card, its known limits and its wording."""
+    c = {k: v for k, v in (x.get("card") or {}).items() if not k.startswith("_")}
+    c.setdefault("override_rule", x.get("override_rule"))
+    c["status"] = x.get("status") or "Measured"
+    if c["status"] != "Measured":              # In progress, Planned, Coming soon: counts in no score, shows No data
+        c["not_measured"] = True
+    c.setdefault("thresholds", [])
+    c.setdefault("proposed_fields", None)
+    limits = x.get("known_limits") or []
+    c["limitations"] = [r.get("limit", "") for r in limits]
+    c["countermeasures"] = [r.get("mitigation", "") for r in limits]
+    c["limitations_table"] = [dict(limitation=r.get("limit", ""), mitigation=r.get("mitigation", ""),
+                                   status=r.get("status") or "No mitigation yet") for r in limits]
+    if x.get("wording"):
+        c["wording"] = x["wording"]
+    return c
 
 
 def thresholds_config():
@@ -143,7 +169,7 @@ def status_of(v, t, hib, unit):
 PEER_MIN_FAMILIES = 5   # the behind-peers flag needs at least 5 families with a scored result (02_metric_dictionary §1.3)
 
 
-def flag_behind_peers(results, tpl, thresholds=None):
+def flag_behind_peers(results, tpl, thresholds=None, flag_on=None):
     """Typical value and the behind-peers flag, per metric, across families (owner, 3 Nov 2026).
 
     Typical = the median of the families' scored results this month (the middle family). It is shown as
@@ -155,6 +181,8 @@ def flag_behind_peers(results, tpl, thresholds=None):
     v1 design's dictionary card). Not flagged either: metrics with no gap (pass/fail, information only),
     and plain counts (UN-01 until the app inventory arrives), whose gap is written per 10 apps."""
     thresholds = thresholds or {}
+    if flag_on is None:                                            # owner, 8 Nov 2026: setting behind_peers_flag, off for now
+        flag_on = thresholds_config().get("behind_peers_flag", True)
     gaps = {mid: x.get("peer_flag_gap") for mid, x in tpl["dictionary"]["metrics"].items()}
     hib = {m["id"]: m["higher_is_better"] for m in tpl["metrics"]}
     for mid in hib:
@@ -168,7 +196,7 @@ def flag_behind_peers(results, tpl, thresholds=None):
             if mid in r and r[mid].get("typical") is not None:
                 r[mid]["typical"] = typical
         gap = gaps.get(mid)
-        if (gap is None or hib[mid] is None or mid in measure.COUNT_ONLY or len(rows) < PEER_MIN_FAMILIES
+        if (not flag_on or gap is None or hib[mid] is None or mid in measure.COUNT_ONLY or len(rows) < PEER_MIN_FAMILIES
                 or (thresholds.get(mid) or {}).get("basis") != "Policy"):
             continue
         for r in rows:
@@ -199,23 +227,53 @@ def blank_result(status, reason, **kw):
 
 
 def empty_reason(mid, all_unplaced):
-    if mid in ("SE-01", "SE-02"):
-        return ("No Checkmarx repos placed with this family yet (each needs a matching GitHub repo whose owner "
-                "is in the family): not scored"
-                if all_unplaced else "No repos scanned: not scored")
-    if mid in ("TE-01", "TE-02"):
-        return "No production deployments this month: not scored"
-    if mid == "TR-01":
-        return ("No active repos placed with this family yet (each needs an owner found in HR by email): not scored"
-                if all_unplaced else "No active repos for this family: not scored")
-    if mid == "TR-02":
-        return ("No active repos placed with this family yet (each needs an owner found in HR by email): not scored"
-                if all_unplaced else "No active repos for this family: not scored")
-    if mid in ("RE-01", "RE-03"):
-        return ("No ITDR applications placed with this family yet (Business Product Area not matched): not scored"
-                if all_unplaced else f"No Tier {'0 or 1' if mid == 'RE-01' else '0, 1 or 2'} applications for this "
-                                     "family: not scored")
-    return "No items: not scored"
+    """Why a family has nothing to count: counting.empty_reason in config/metrics.json (empty_reason_unplaced
+    when none of the items could be placed with a family)."""
+    c = config.counting(mid)
+    return (all_unplaced and c.get("empty_reason_unplaced")) or c.get("empty_reason") or "No items: not scored"
+
+
+def _merge(a, b):
+    """Add one set of counts to another (numbers summed, lists joined, flags or-ed)."""
+    if a is None:
+        return {k: (list(v) if isinstance(v, list) else v) for k, v in b.items()}
+    out = dict(a)
+    for k, v in b.items():
+        if isinstance(v, bool):
+            out[k] = bool(a.get(k)) or v
+        elif isinstance(v, (int, float)) and isinstance(a.get(k, 0), (int, float)) and not isinstance(a.get(k), bool):
+            out[k] = a.get(k, 0) + v
+        elif isinstance(v, list):
+            out[k] = list(a.get(k) or []) + v
+        else:
+            out.setdefault(k, v)
+    return out
+
+
+def expand_shared(counts, shared):
+    """Per-family counts with each shared group's counts added to every family its lead leads (owner, 6 Nov 2026:
+    a lead of several families rolls up to each of them; the same numbers show for each until the data is more
+    granular). The firm keeps using the original counts, so the group is counted once there. A count-only metric
+    (UN-01) is a unique count: an item already in the family isn't counted twice."""
+    if not shared:
+        return counts
+    out = {}
+    for mid, by_fam in counts.items():
+        fam = {k: v for k, v in by_fam.items() if k not in shared}
+        for g, fids in shared.items():
+            if g not in by_fam or not isinstance(by_fam[g], dict):
+                continue
+            for fid in fids:
+                fam[fid] = _merge(fam.get(fid), by_fam[g])
+                if mid in measure.COUNT_ONLY:
+                    seen, items = set(), []
+                    for it in fam[fid].get("items") or []:
+                        if it.get("id") not in seen:
+                            seen.add(it.get("id"))
+                            items.append(it)
+                    fam[fid]["items"], fam[fid]["numerator"] = items, len(items)
+        out[mid] = fam
+    return out
 
 
 def family_tiers(feeds):
@@ -226,10 +284,11 @@ def family_tiers(feeds):
     if itdr_feed.get("status") != "mapped":
         return None
     out = {}
+    shared = (feeds.get("hr_mapping") or {}).get("shared") or {}
     for a in itdr_feed.get("rows") or []:
-        if a.get("family_id"):
-            t01, total = out.get(a["family_id"], (0, 0))
-            out[a["family_id"]] = (t01 + (a.get("recovery_tier") in measure.RE01_TIERS), total + 1)
+        for fid in shared.get(a.get("family_id"), [a.get("family_id")] if a.get("family_id") else []):
+            t01, total = out.get(fid, (0, 0))
+            out[fid] = (t01 + (a.get("recovery_tier") in measure.RE01_TIERS), total + 1)
     return out
 
 
@@ -252,6 +311,8 @@ def score_month(mapped, cfg=None, tpl=None):
     feeds = mapped["feeds"]
     meas = measure.measure(mapped)
     metrics = {m["id"]: m for m in tpl["metrics"]}
+    # Per-family counts, with a shared lead's group added to each of their families; the firm uses meas["counts"].
+    fcounts = expand_shared(meas["counts"], (feeds.get("hr_mapping") or {}).get("shared") or {})
 
     # Families come from the product family owners file (doc 13 §8). Without it there are none yet.
     people = {p["email"]: p for p in feeds.get("hr", {}).get("people") or [] if p.get("email")}
@@ -295,7 +356,7 @@ def score_month(mapped, cfg=None, tpl=None):
             for fid in fids:
                 results[fid][mid] = blank_result("DNR", blocked)
             continue
-        counts = meas["counts"][mid]
+        counts = fcounts[mid]
         if mid in measure.COUNT_ONLY:
             # Owner, 3 Nov 2026: scored as a plain count against the prevailing median until app-level data
             # allows "per 10 apps". A family with no Critical or SWE incident has a count of 0.
@@ -380,7 +441,7 @@ def score_month(mapped, cfg=None, tpl=None):
     # Actions on incidents with no rating are shown, never hidden, and kept out of the score (owner, 2 Nov 2026).
     if "UN-02" in meas["received"]:
         for fid in fids:
-            c = meas["counts"]["UN-02"].get(fid) or {}
+            c = fcounts["UN-02"].get(fid) or {}
             uo, uv = c.get("unrated_open", 0), c.get("unrated_overdue", 0)
             if uo:
                 r = results[fid]["UN-02"]
@@ -513,7 +574,7 @@ def score_month(mapped, cfg=None, tpl=None):
         period["notes"] = notes
     # The items behind each family's numbers, for the drill-down and the family download.
     items = {}
-    for mid, by_fam in meas["counts"].items():
+    for mid, by_fam in fcounts.items():
         for fid, c in by_fam.items():
             if fid.startswith("_") or not isinstance(c, dict) or not c.get("items"):
                 continue

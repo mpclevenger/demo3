@@ -70,6 +70,7 @@ def test_contracted_metrics_only_and_layout_check(client):
     cols = up(client, "tcc", "tcc_export.csv", month="2026-08").json["kept"]["columns_kept"]   # the file's own names
     cid = ask(client, metrics=["TE-01"], columns=cols).json["contract"]["id"]                  # TE-02 not in the contract
     decide(client, cid, "approved")
+    up(client, "ntcc", "ntcc_export.csv")                                    # TE-01 needs both change files
     r = up(client, "tcc", "tcc_export.csv")
     assert r.status_code == 200
     assert not [w for w in r.json["checks"]["warnings"] if "data contract" in w]              # same layout: no warning
@@ -77,7 +78,8 @@ def test_contracted_metrics_only_and_layout_check(client):
     d = client.get("/data.json").json
     te2 = d["periods"]["2026-09"]["families"]["payments"]["metrics"]["TE-02"]
     assert te2["status"] == "DNR" and "data contract" in te2["reason"] and "TE-02" in te2["reason"]
-    assert d["periods"]["2026-09"]["families"]["payments"]["metrics"]["TE-01"]["status"] == "Green"
+    te1 = d["periods"]["2026-09"]["families"]["payments"]["metrics"]["TE-01"]
+    assert te1["status"] != "DNR" and te1["denominator"] == 3                # in the contract: counted
     # version 2 with a column the file doesn't have: the next upload is flagged (acknowledged before the lock)
     v2 = ask(client, metrics=["TE-01", "TE-02"], columns=cols[:-2] + ["Made Up Column"]).json["contract"]
     decide(client, v2["id"], "approved")

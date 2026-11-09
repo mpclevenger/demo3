@@ -7,11 +7,13 @@ Each item says what it is (a change, an action, an incident, a repo), who and wh
 import csv
 import io
 
-NAMES = {"TE-01": "Changes approved before deployment", "TE-02": "Releases reverted",
-         "UN-01": "Critical and SWE incidents", "UN-02": "Overdue postmortem actions",
-         "SE-01": "Checkmarx SAST policy", "SE-02": "Checkmarx SCA policy",
-         "TR-01": "Repos mapped to an app", "TR-02": "Repo hygiene checks", "RE-01": "Tier 0/1 DR test completed in 12 months",
-         "RE-03": "Resiliency test passed in 12 months"}
+from . import config
+
+# What the items are called and what type they are: counting.items_name / item_type in config/metrics.json.
+_COUNTING = {mid: x["counting"] for mid, x in config.metrics().items() if x.get("counting")}
+NAMES = {mid: c["items_name"] for mid, c in _COUNTING.items() if c.get("items_name")}
+
+
 
 
 def _day(v):
@@ -21,9 +23,9 @@ def _day(v):
 def describe(mid, it):
     """-> dict(result, concern, date, date_label): concern = this item is what pulls the metric down."""
     if mid == "TE-01":
-        ok = it.get("approved")
-        return dict(result="Approved before deployment" if ok else "Not approved before deployment",
-                    concern=not ok, date=_day(it.get("deployed")), date_label="Deployed")
+        ok = it.get("through_tcc")
+        return dict(result="Through TCC" if ok else "Outside TCC (Non-TCC change)",
+                    concern=not ok, date=_day(it.get("created")), date_label="Created")
     if mid == "TE-02":
         res = "Reverted" if it.get("revert") else "Not reverted"
         if it.get("client_impact"):
@@ -102,8 +104,7 @@ def to_csv(rows, month, family_name):
 
 # ---- evidence.json: the shape the page's drill-down reads (EV[month][family][metric]) ----
 
-TYPES = {"TE-01": "deployment", "TE-02": "release", "UN-01": "incident", "UN-02": "action",
-         "SE-01": "repo", "SE-02": "repo", "TR-01": "repo", "TR-02": "repo", "RE-01": "application", "RE-03": "application"}
+TYPES = {mid: c["item_type"] for mid, c in _COUNTING.items() if c.get("item_type")}
 NO_TEAM = ("NO-TEAM", "Not placed with a team")
 NO_APP = "NO-APP"                  # the page shows it as "Not mapped to an app"
 
@@ -127,11 +128,13 @@ def _by_app(mid, items):
 
 
 def _in_numerator(mid, it):
-    """What the metric's numerator counts: approved (TE-01), reverted (TE-02), overdue (UN-02), passing (SE)."""
-    return {"TE-01": bool(it.get("approved")), "TE-02": bool(it.get("revert")),
-            "UN-02": bool(it.get("overdue")), "UN-01": True,
-            "SE-01": bool(it.get("passed")), "SE-02": bool(it.get("passed")),
-            "TR-01": bool(it.get("passed")), "TR-02": not it.get("failed"), "RE-01": bool(it.get("passed")), "RE-03": bool(it.get("passed"))}.get(mid, True)
+    """Whether an item is in the metric's numerator: the item field named by counting.numerator_field in
+    config/metrics.json (e.g. through_tcc, revert, passed). TR-02 counts a repo with no failed check; a metric
+    with no field (UN-01, a count) counts every item."""
+    if mid == "TR-02":
+        return not it.get("failed")
+    field = _COUNTING.get(mid, {}).get("numerator_field")
+    return bool(it.get(field)) if field else True
 
 
 def _days_overdue(it, month_end):

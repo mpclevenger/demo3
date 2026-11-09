@@ -32,9 +32,10 @@ def load(month, feeds=ALL):
 def test_counts_statuses_and_scores(tmp_store):
     p = load("2026-09")["period"]
     pay = p["families"]["payments"]["metrics"]
-    # TE-01: TCC changes deployed in September (by created date) only; Non-TCC is left to TE-06 (owner, 2 Nov)
-    assert (pay["TE-01"]["numerator"], pay["TE-01"]["denominator"]) == (2, 2)
-    assert pay["TE-01"]["status"] == "Green"                    # policy 80 / 60
+    # TE-01 (owner, 8 Nov 2026): deployed changes through TCC / all deployed changes, TCC + Non-TCC, by created date
+    assert (pay["TE-01"]["numerator"], pay["TE-01"]["denominator"]) == (2, 3)
+    # prevailing median: only 2 families have a result here and 5 are needed, so no tolerance threshold yet
+    assert pay["TE-01"]["status"] == "N/A" and "No tolerance threshold yet" in pay["TE-01"]["reason"]
     assert pay["TE-02"]["status"] == "Red"                      # a release with client impact
     assert pay["TE-02"]["override"] and "client impact" in pay["TE-02"]["reason"]   # automatic Red rule (owner, 3 Nov)
     # Nothing open = Green (D-100); 1-2 items = Low confidence, not scored
@@ -45,17 +46,16 @@ def test_counts_statuses_and_scores(tmp_store):
     assert p["firm_totals"]["SE-01"] == 66.7 and p["unattributed_pct"]["Cyber"] == 100.0
     # Feeds not received are No data and left out
     assert pay["TR-01"]["status"] == "DNR" and "Arch" in p["dnr"]
-    # Letters come from scoring.py: TE = Green 100 + Red 0 -> 50, but client impact is an automatic Red rule,
-    # which caps the block at 49 (owner, 3 Nov 2026)
-    assert p["families"]["payments"]["blocks"]["REL"]["score"] == 49
+    # Blocks come from scoring.py: TE-01 isn't scored here, so the block is TE-02 alone: Red, 0 points
+    assert p["families"]["payments"]["blocks"]["REL"]["score"] == 0
     # Owner, 4 Nov 2026: TRUST from any scored block (setting "coverage"), so one block is enough
-    assert p["families"]["payments"]["trust"] == 49 and p["families"]["payments"]["blocks_scored"] == 1
+    assert p["families"]["payments"]["trust"] == 0 and p["families"]["payments"]["blocks_scored"] == 1
     assert p["coverage"] == {"block_min_share": 0, "trust_min_blocks": 1}
     # Firm TRUST is scored from the pooled firm-wide results, not averaged from the families (owner, 4 Nov 2026):
-    # TE-01 on every row is Amber, and TE-02's automatic Red rule (client impact in one family) holds for the firm
-    assert p["firm"]["TE-01"]["status"] == "Amber" and p["firm"]["TE-02"]["status"] == "Red" and p["firm"]["TE-02"]["override"]
-    assert p["firm_blocks"]["REL"]["score"] == 25 and p["firm_trust"] == 25 and p["firm_status"] == "Red"
-    assert p["firm_trust_average"] == 87                       # the old rule, kept beside it for comparison
+    # TE-01 has no tolerance threshold yet, and TE-02's automatic Red rule (client impact in one family) holds for the firm
+    assert p["firm"]["TE-01"]["status"] == "N/A" and p["firm"]["TE-02"]["status"] == "Red" and p["firm"]["TE-02"]["override"]
+    assert p["firm_blocks"]["REL"]["score"] == 0 and p["firm_trust"] == 0 and p["firm_status"] == "Red"
+    assert p["firm_trust_average"] == 67                       # the old rule, kept beside it for comparison
     # A result's 'provisional' means "carried over" in the front end; never set here
     assert not any(r["provisional"] for f in p["families"].values() for r in f["metrics"].values())
     # Mapping notes reach the Data sources page as {rule, detail}, each rule unique within its file
@@ -187,7 +187,7 @@ def test_thresholds_need_five_families(tmp_store):
     assert "5 are needed" in score_month.no_threshold_reason(4, cfg)
     assert score_month.thresholds_for("TE-02", [10.0, 30.0], False, dict(cfg, min_families_for_threshold=2))["green"] == 20.0
     assert score_month.thresholds_for("TE-02", [], False, cfg) is None                    # nothing to calculate from
-    assert score_month.thresholds_for("TE-01", [], True, cfg)["basis"] == "Policy"         # policy metrics unchanged
+    assert score_month.thresholds_for("RE-02", [], True, cfg)["basis"] == "Policy"         # policy metrics unchanged
 
 
 def test_subteams_come_from_the_hr_column_in_settings(tmp_store):
@@ -212,4 +212,4 @@ def test_coverage_setting_can_go_back_to_the_original_rules(tmp_store, monkeypat
     monkeypatch.setenv("TRUST_THRESHOLDS", str(tmp_store / "t.json"))
     p = load("2026-09")["period"]
     assert p["families"]["payments"]["trust"] is None and p["families"]["payments"]["status"] == "Insufficient data"
-    assert p["families"]["payments"]["blocks"]["REL"]["score"] == 49       # the block itself still scores
+    assert p["families"]["payments"]["blocks"]["REL"]["score"] == 0        # the block itself still scores

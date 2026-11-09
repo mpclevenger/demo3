@@ -1,4 +1,4 @@
-"""Read one Non-TCC change export on its own (QUESTION_BANK R-TCC-13). Feeds the TE-01 denominator.
+"""Read one Non-TCC change export on its own (QUESTION_BANK R-TCC-13). Feeds TE-01: changes outside TCC (owner, 8 Nov 2026).
 
 Upload never needs any other file. Placing a change with a family (Author Email -> HR) and the
 check against the TCC file (Q-NTCC-06) happen at mapping.
@@ -58,7 +58,7 @@ def read(raw_bytes):
             # Q-NTCC-01 (owner, 2 Nov): month = Created Date; Last updated only if Created Date is blank
             "month": (when.strftime("%Y-%m") if (deployed and when) else None),
             "month_from": ("Created Date" if created else "Last updated" if updated else None) if deployed else None,
-            "approved": False,                                                 # Q-NTCC-04: never approved for TE-01
+            "approved": False,                                                 # Q-NTCC-04: never approved (kept for the record)
         })
 
     fallback = [x["rpd_id"] for x in rows if x["month_from"] == "Last updated"]

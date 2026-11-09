@@ -69,14 +69,14 @@ def test_an_edited_migration_stops_everything(db, monkeypatch, tmp_path):
 
 def test_upload_map_score_publish_all_in_the_database(db):
     for feed, name in (("hr", "hr_firmwide.csv"), ("hr_mapping", "family_owners.csv"), ("tcc", "tcc_export.csv"),
-                       ("cx_sast", "final_checkmarx_sast_report.json")):
+                       ("ntcc", "ntcc_export.csv"), ("cx_sast", "final_checkmarx_sast_report.json")):
         e = store.upload(feed, "2026-09", (FIX / name).read_bytes(), name, "Tester")
         assert e["file"]
     again = store.upload("tcc", "2026-09", (FIX / "tcc_export.csv").read_bytes(), "tcc_export.csv", "Tester")
     assert again["note"].startswith("already received")
     mapping.map_month("2026-09")
     p = score_month.run("2026-09")["period"]
-    assert p["families"]["payments"]["metrics"]["TE-01"]["status"] == "Green"
+    assert (p["families"]["payments"]["metrics"]["TE-01"]["numerator"], p["families"]["payments"]["metrics"]["TE-01"]["denominator"]) == (2, 3)
     assert publish.run() == "database"
     assert storage.months("scored") == ["2026-09"]
     assert '"env_label"' in storage.published("data.json")

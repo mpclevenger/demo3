@@ -42,7 +42,7 @@ def families_with(mid, values, status="Amber"):
 
 def test_typical_is_the_median_and_the_flag_needs_the_gap():
     r = families_with("TE-02", [1.0, 2.0, 3.0, 4.0, 20.0])
-    score_month.flag_behind_peers(r, TPL, POLICY)
+    score_month.flag_behind_peers(r, TPL, POLICY, flag_on=True)
     assert [r[f]["TE-02"]["typical"] for f in r] == [3.0] * 5
     assert [r[f]["TE-02"]["behind_peers"] for f in r] == [False, False, False, False, True]   # 20 - 3 >= 15
     assert r["f4"]["TE-02"]["status"] == "Amber"                                              # never changes status
@@ -50,13 +50,13 @@ def test_typical_is_the_median_and_the_flag_needs_the_gap():
 
 def test_higher_is_better_flags_the_low_side():
     r = families_with("TE-01", [95.0, 94.0, 90.0, 88.0, 70.0])
-    score_month.flag_behind_peers(r, TPL, POLICY)
+    score_month.flag_behind_peers(r, TPL, POLICY, flag_on=True)
     assert [r[f]["TE-01"]["behind_peers"] for f in r] == [False, False, False, False, True]   # 90 - 70 >= 15
 
 
 def test_no_flag_with_fewer_than_five_families_but_typical_still_shown():
     r = families_with("TE-02", [1.0, 2.0, 3.0, 30.0])
-    score_month.flag_behind_peers(r, TPL, POLICY)
+    score_month.flag_behind_peers(r, TPL, POLICY, flag_on=True)
     assert not any(r[f]["TE-02"]["behind_peers"] for f in r)
     assert r["f0"]["TE-02"]["typical"] == 2.5
 
@@ -65,7 +65,7 @@ def test_typical_ignores_unscored_and_reused_results():
     r = families_with("TE-02", [1.0, 2.0, 3.0, 4.0, 5.0])
     r["f5"] = {"TE-02": res("Low confidence", 90.0)}
     r["f6"] = {"TE-02": dict(res("Red", 90.0), provisional=True)}
-    score_month.flag_behind_peers(r, TPL, POLICY)
+    score_month.flag_behind_peers(r, TPL, POLICY, flag_on=True)
     assert r["f0"]["TE-02"]["typical"] == 3.0
     assert not r["f5"]["TE-02"]["behind_peers"] and not r["f6"]["TE-02"]["behind_peers"]
 
@@ -73,7 +73,7 @@ def test_typical_ignores_unscored_and_reused_results():
 def test_no_flag_for_plain_counts_or_metrics_without_a_gap():
     r = families_with("UN-01", [0.0, 0.0, 0.0, 1.0, 9.0])
     r2 = families_with("SE-04", [100.0, 100.0, 100.0, 100.0, 10.0])
-    score_month.flag_behind_peers(r, TPL, POLICY)
+    score_month.flag_behind_peers(r, TPL, POLICY, flag_on=True)
     score_month.flag_behind_peers(r2, TPL, POLICY)
     assert not any(x["UN-01"]["behind_peers"] for x in r.values())
     assert not any(x["SE-04"]["behind_peers"] for x in r2.values())
@@ -152,3 +152,10 @@ def test_no_flag_where_the_prevailing_median_sets_the_threshold():
     score_month.flag_behind_peers(r, TPL, {"TE-02": {"basis": "Calibrated"}})
     assert not any(x["TE-02"]["behind_peers"] for x in r.values())
     assert r["f0"]["TE-02"]["typical"] == 3.0                                  # typical still shown
+
+
+def test_the_flag_is_off_by_setting():
+    """Owner, 8 Nov 2026: behind_peers_flag is false in config/thresholds.json, so nobody is flagged; typical still shows."""
+    r = families_with("TE-01", [95.0, 94.0, 90.0, 88.0, 70.0])
+    score_month.flag_behind_peers(r, TPL, POLICY)
+    assert not any(r[f]["TE-01"]["behind_peers"] for f in r) and r["f0"]["TE-01"]["typical"] == 90.0

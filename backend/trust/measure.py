@@ -9,8 +9,9 @@ RE-01 and RE-03 (ITDR applications + DR tests); TR-01, TR-02, RE-01 and RE-03 co
 (setting switched_on, owner 4 Nov 2026; TR-01 6 Nov 2026). Every other metric is "not received" until its feed
 has a layout and a reader. UN-03 (client incidents) is "Coming soon": no source yet (owner, 2 Nov 2026).
 
-TE-01 is TCC changes only (owner, 2 Nov 2026): changes outside TCC (the Non-TCC file) belong to TE-06,
-which is not on the scorecard yet.
+TE-01 (owner, 8 Nov 2026; was "approved before deployment"): the share of a family's deployed changes that went
+through TCC, out of all its deployed changes (TCC + Non-TCC). It needs both change files, so a month without the
+Non-TCC file shows No data rather than a false 100%.
 
 UN-01 is a plain count for now (owner, 2 Nov 2026): there is no incidents file, so it is the unique
 Critical and SWE incident_ids in the postmortem file. Its dictionary rate is "per 10 apps", which needs the app inventory.
@@ -22,16 +23,16 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from . import config
 from .linking import UNATTRIBUTED
 
 NY = ZoneInfo("America/New_York")
 
-# Which feed each measured metric needs before it counts as received (others are optional).
-NEEDS = {"TE-01": "tcc", "TE-02": "tcc", "UN-01": "postmortems", "UN-02": "actions",
-         "SE-01": "cx_sast", "SE-02": "cx_sca", "TR-02": "repos", "RE-01": "dr_tests", "RE-03": "dr_tests",
-         "TR-01": "repos"}
-NEEDS_ALSO = {"RE-01": "itdr", "RE-03": "itdr",   # both need the ITDR application file and the DR tests file
-              "TR-01": "app_inventory"}           # GitHub repos and the app inventory (owner, 6 Nov 2026)
+# Which files each measured metric needs before it counts as received: counting.files in config/metrics.json
+# (first file in NEEDS, a second one in NEEDS_ALSO). Other files are optional.
+_FILES = {mid: x["counting"]["files"] for mid, x in config.metrics().items() if (x.get("counting") or {}).get("files")}
+NEEDS = {mid: f[0] for mid, f in _FILES.items()}
+NEEDS_ALSO = {mid: f[1] for mid, f in _FILES.items() if len(f) > 1}
 
 # Metrics counted only once switched on in config/thresholds.json "switched_on" (owner, 4 Nov 2026).
 SWITCHABLE = ("TR-01", "TR-02", "RE-01", "RE-03")
@@ -45,7 +46,9 @@ RE03_DAYS = 365
 RE01_TIERS = (0, 1)
 
 # Shown as "Coming soon" and left out of every score until a source is agreed (owner, 2 Nov 2026).
-COMING_SOON = {"UN-03": "Client incidents: coming soon. There is no source for client incidents yet."}
+# status "Coming soon" in config/metrics.json; status_note says why.
+COMING_SOON = {mid: x.get("status_note") or f"{x.get('name', mid)}: coming soon."
+               for mid, x in config.metrics().items() if x.get("status") == "Coming soon"}
 
 # Counted, not rated, until the app inventory gives the "per 10 apps" denominator: metric -> unit shown.
 COUNT_ONLY = {"UN-01": "Critical or SWE incidents"}
@@ -67,18 +70,27 @@ def _blank():
 
 
 def te01(feeds, month):
-    """Prod deployments through TCC in the month (by ticket created date): approved before deployment ÷ all.
+    """Deployed changes in the month (by created date) that went through TCC ÷ all deployed changes (TCC + Non-TCC).
 
-    Owner, 2 Nov 2026: changes outside TCC are left to TE-06, so the Non-TCC file is not counted here."""
+    Owner, 8 Nov 2026: replaces "approved before deployment". Standard changes are TCC changes, so they count as
+    through TCC. A change in both files counts once, as TCC (Q-NTCC-06). Non-TCC rules: deployed = Status
+    (Q-NTCC-02), month = Created Date (Q-NTCC-01), working rules until Change Management confirms."""
     out = defaultdict(_blank)
+
+    def add(x, rid, source, tcc, created, deployed):
+        r = out[x["family_id"]]
+        r["denominator"] += 1
+        r["numerator"] += tcc
+        r["items"].append({"id": rid, "source": source, "through_tcc": tcc, "person": x.get("person"),
+                           "team": x.get("team"), "team_key": x.get("team_key"), "created": created,
+                           "deployed": deployed, "link": x.get("link")})
+
     for x in feeds.get("tcc", {}).get("rows") or []:
         if x["deployed"] and x["month"] == month:
-            r = out[x["family_id"]]
-            r["denominator"] += 1
-            r["numerator"] += bool(x["approved_before_deploy"])
-            r["items"].append({"id": x["ticket_id"], "source": "TCC", "approved": bool(x["approved_before_deploy"]),
-                               "person": x.get("person"), "team": x.get("team"), "team_key": x.get("team_key"), "created": x.get("createddateutc"),
-                               "deployed": x.get("lastdeployment"), "link": x.get("link")})
+            add(x, x["ticket_id"], "TCC", True, x.get("createddateutc"), x.get("lastdeployment"))
+    for x in feeds.get("ntcc", {}).get("rows") or []:
+        if x["deployed"] and x["month"] == month and not x.get("also_in_tcc"):
+            add(x, x["rpd_id"], "Non-TCC", False, x.get("created"), None)
     return out
 
 

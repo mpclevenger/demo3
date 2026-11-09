@@ -124,7 +124,7 @@ def link(apps, people, ad_rows=None, itdr_rows=None, gh_rows=None, cx_feeds=(), 
     live = [a for a in apps if a.get("active")]
     people = people or []
     by_email = {p["email"]: p for p in people if p.get("email")}
-    by_sam = {p["sam_account"]: p for p in people if p.get("sam_account")}
+    by_sam = {p["sam_account"].lower(): p for p in people if p.get("sam_account")}
 
     # 1. Org -> HR Supervisory Organization (without "(Manager Name)") -> the family most of its people are in.
     org_min = _setting(settings, "app_org_match_min", ORG_MATCH_MIN)
@@ -134,10 +134,11 @@ def link(apps, people, ad_rows=None, itdr_rows=None, gh_rows=None, cx_feeds=(), 
     cache, fuzzy, unknown, tied, too_close = {}, [], [], [], []
 
     # 2. Owners: HR person, else AD group members found in HR.
-    members = {}
-    for x in ad_rows or []:
-        members.setdefault(x["owner_email"], []).append(x)
+    if isinstance(ad_rows, list):                       # row dicts (tests): make the compact form
+        from .owner_groups import from_rows
+        ad_rows = from_rows(ad_rows)
     no_ad = ad_rows is None
+    members, kinds = (ad_rows or {}).get("members", {}), (ad_rows or {}).get("kinds", {})
     owner_cache = {}
 
     def resolve(email):
@@ -148,18 +149,16 @@ def link(apps, people, ad_rows=None, itdr_rows=None, gh_rows=None, cx_feeds=(), 
             res = ([dict(sam=p["sam_account"], name=p.get("worker"), email=email, via="HR")], None)
         elif no_ad:
             res = ([], "not in HR; AD owner groups file not loaded")
-        elif email not in members:
+        elif email not in kinds:
             res = ([], "not in HR or the AD owner groups file")
         else:
-            found, kinds = [], {m["owner_kind"] for m in members[email]}
-            for m in members[email]:
-                if not m.get("included") or not m.get("member_sam"):
-                    continue
-                p = by_sam.get(m["member_sam"]) or by_email.get(m.get("member_email") or "")
+            found = []
+            for sam, m_email, group in members.get(email, ()):
+                p = by_sam.get(sam) or by_email.get(m_email or "")
                 if p:
                     found.append(dict(sam=p["sam_account"], name=p.get("worker"), email=p.get("email"),
-                                      via=f"AD group {m.get('group_sam') or email}"))
-            why = ("not found in AD" if "not found" in kinds else
+                                      via=f"AD group {group or email}"))
+            why = ("not found in AD" if kinds[email] == "not found" else
                    "no member of the AD group is in HR (the CTO's line)" if not found else None)
             res = (found, why)
         owner_cache[email] = res
@@ -198,7 +197,7 @@ def link(apps, people, ad_rows=None, itdr_rows=None, gh_rows=None, cx_feeds=(), 
                 else:
                     tied.append(why)
         if a["family_id"] is None:
-            fams = Counter((by_sam.get(o["sam"]) or {}).get("family_id") for o in a["owners"])
+            fams = Counter((by_sam.get(o["sam"].lower()) or {}).get("family_id") for o in a["owners"])
             fams.pop(None, None)
             fams.pop(UNATTRIBUTED, None)
             top = fams.most_common(2)

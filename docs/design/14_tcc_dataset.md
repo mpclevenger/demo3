@@ -51,24 +51,24 @@ Headers are matched case-insensitively and fuzzily through the column map; order
 | 30 | Fields Missing | `;` delimited list | Load (info) |
 | **Audit trail timestamps (3)** | | | |
 | 31 | Peer Review Recorded At (UTC) | a date-time or blank | Load |
-| 32 | Approval Recorded At (UTC) | a date-time or blank | Load — TE-01 approved before deployment |
+| 32 | Approval Recorded At (UTC) | a date-time or blank | Load (no longer used by TE-01 since 8 Nov 2026; kept for a later approval check) |
 | 33 | Outcome Recorded At (UTC) | a date-time or blank | Load — TE-02 7-day window |
 
 29 columns loaded, 4 not (Title and the three empty columns). The original file stays on SharePoint (D-97).
 
 ## Intake checks at upload (this file only; doc 17 §4)
 
-- **File:** columns found through `config/column_maps.json` ("tcc"), case-insensitively and fuzzily. A missing column is a **note** naming it; the file still loads. If RPD ID or Actual Last Deployment can't be found, TE-01 and TE-02 show **No data** for the month; if only Approval Recorded At is missing, TE-01 shows No data; if only Overall outcome or Outcome Recorded At is missing, TE-02 shows No data. A missing Author email column doesn't stop any metric: the changes show as Not yet mapped until it is found. Extra columns are ignored.
+- **File:** columns found through `config/column_maps.json` ("tcc"), case-insensitively and fuzzily. A missing column is a **note** naming it; the file still loads. If RPD ID or Actual Last Deployment can't be found, TE-01 and TE-02 show **No data** for the month; if only Overall outcome or Outcome Recorded At is missing, TE-02 shows No data. A missing Author email column doesn't stop any metric: the changes show as Not yet mapped until it is found. Extra columns are ignored.
 - **Rows:** RPD ID blank or not a number → row set aside and listed; a duplicate RPD ID → the later row is set aside and listed; a date that can't be read in any common format → that value is blank and noted, the row is kept; Status, Change Category, Risk Score, Resolved, Pre-Deploy Compliant, Fully Compliant and Overall outcome are read in any case (`completed`, `PLANNED`), and an outcome written with its label (`90 FAIL backout initiated by client`) is read as its code; other values are kept and noted; blank Author email → kept, Not yet mapped (shown on Firm position).
 - **Cross-file (at scoring, not upload):** a RPD ID that also appears as a Non-TCC RPD ID is a warning, listed; the change is counted once, as TCC (Q-NTCC-06). It runs only when both files are loaded.
 - **Time:** all dates without a timezone are read as New York time until Q-TCC-15 is answered (L-TCC-04). A deployed change's month is the New York month of `Created date`; if that is blank, of `Actual Last Deployment`, with a note.
 
 ## Working rules used by the reader (until the code lists arrive)
 
-- **Approved before deployment (TE-01):** a Standard change counts as approved; otherwise `Overall Change Approval` has a value that doesn't start with OBSOLETED or REJECTED, and `Approval Recorded At` is before `Actual Last Deployment`. Replace once the approval code list arrives (Q-TCC-03).
+- **Approved before deployment (flag only, not scored since 8 Nov 2026):** a Standard change counts as approved; otherwise `Overall Change Approval` has a value that doesn't start with OBSOLETED or REJECTED, and `Approval Recorded At` is before `Actual Last Deployment`. Replace once the approval code list arrives (Q-TCC-03).
 - **Revert (TE-02):** Overall outcome 40, 50, 60 or 90. 99 is its own count, out of the rate; 95 is out. **Month (owner, 2 Nov 2026):** the month the 7-day revert window ends, i.e. `Actual Last Deployment` + 7 days.
 - **Client impact:** Status = Client (owner, 1 Nov: TE-02 turns Red that month; Q-TCC-16 still open on detection).
-- **TE-01 (owner, 2 Nov 2026):** TCC changes only; changes outside TCC (the Non-TCC file) are left to TE-06.
+- **TE-01 (owner, 8 Nov 2026):** deployed TCC changes ÷ all deployed changes (TCC + Non-TCC). Every deployed TCC change counts as through TCC, Standard changes included. (2 Nov to 8 Nov: TCC changes approved before deployment.)
 
 ## Build notes
 
@@ -77,7 +77,7 @@ Headers are matched case-insensitively and fuzzily through the column map; order
 
 ## Non-TCC export (12 columns, R-TCC-13)
 
-Changes that didn't go through TCC. **Owner, 2 Nov 2026: these belong to TE-06, not TE-01**; TE-06 is not on the scorecard yet, so the file is uploaded and read but not counted anywhere today. (Before: every deployed Non-TCC change counted in TE-01 as not approved.) Uploads on its own, with no other file; column names in `config/column_maps.json` ("ntcc").
+Changes that didn't go through TCC. **Owner, 8 Nov 2026: counted in TE-01's denominator** (deployed changes outside TCC). TE-01 needs this file and the TCC file for the month. (2 Nov to 8 Nov it was read but not counted.) Uploads on its own, with no other file; column names in `config/column_maps.json` ("ntcc").
 
 Columns: RPD ID (key), RPD Link, Title (not loaded), Status (11 options incl. blank), RPD Category, Created Date (UTC), Last updated (UTC), Author, Author Email (not always filled in), Assignees (not loaded), Department, L4 director.
 

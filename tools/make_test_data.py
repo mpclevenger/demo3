@@ -184,7 +184,7 @@ def make_world(families=8, seed=7, cto_sam=None):
     bands = ["product"] * product_n + ["platform"] * platform_n
 
     profiles = {g: _profile(rng, families) for g in GROUPS}
-    if families >= 6:           # change approvals: a couple of families under 60%, one in the Amber band, the rest above 80%
+    if families >= 6:           # TE-01 share of changes through TCC: most families high, three lower (spread for the median)
         profiles["te01"] = ([rng.uniform(0.84, 0.95) for _ in range(families - 3)]
                             + [rng.uniform(0.66, 0.70), rng.uniform(0.54, 0.58), rng.uniform(0.38, 0.42)])
     for g in GROUPS:
@@ -439,11 +439,16 @@ def _ntcc(world, month):
     headers = ["RPD ID", "RPD Link", "Title", "Status", "RPD Category", "Created Date (UTC)", "Last updated (UTC)",
                "Author", "Author Email", "Assignees", "Department", "L4 director"]
     rows = []
-    for k in range(6):
-        fam = rng.choice(world["families"])
+    # TE-01 (owner, 8 Nov 2026): a family's share of changes through TCC follows its "te01" quality, so its
+    # Non-TCC changes are about tcc_n x (1 - q) / q.
+    picks = []
+    for fam in world["families"]:
+        q = max(0.3, _q(world, fam, "te01", month, rng))
+        picks += [fam] * round(fam["tcc_n"] * (1 - q) / q)
+    for k, fam in enumerate(picks):
         a = rng.choice(_people(fam, month))
         created = datetime(y, m, rng.randint(1, 20), 10, 0)
-        rows.append([f"{int(f'{y}{m:02d}') * 100 + k + 1}", f"https://rpd.example.test/{k + 1}",
+        rows.append([f"{int(f'9{y}{m:02d}') * 1000 + k + 1}", f"https://rpd.example.test/{k + 1}",   # 9-prefix: never a TCC id
                      rng.choice(["Hotfix", "Tweak", "Patch"]), rng.choice(["Completed", "Resolved", "Monitoring"]),
                      rng.choice(["Hotfix", "Change"]), _us_datetime(created), _us_datetime(created + timedelta(days=2)),
                      a["name"], a["email"], "", a["dept"], fam["lead"]["name"]])

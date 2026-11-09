@@ -135,14 +135,15 @@ def test_comments_threads_and_checks(client):
 
 def test_drill_down_and_csv_download(client):
     ready(client)
-    for feed, name in (("actions", "actions_export.csv"), ("postmortems", "postmortems_export.csv")):
+    for feed, name in (("actions", "actions_export.csv"), ("postmortems", "postmortems_export.csv"),
+                       ("ntcc", "ntcc_export.csv")):                        # TE-01 needs both change files
         up(client, feed, name)
     client.post("/api/update", json={"month": "2026-09", "by": "Tester"}, headers=H)
     ev = client.get("/evidence.json").json["2026-09"]
     te01 = ev["payments"]["TE-01"]
-    assert te01["n_items"] == 2 and sum(t["den"] for t in te01["by_team"]) == 2
+    assert te01["n_items"] == 3 and sum(t["den"] for t in te01["by_team"]) == 3            # 2 TCC + 1 Non-TCC
     it = te01["items"][0]
-    assert it["item_type"] == "deployment" and it["tag"].startswith(("Approved", "Not approved")) and it["team_key"]
+    assert it["item_type"] == "deployment" and it["tag"].startswith(("Through TCC", "Outside TCC")) and it["team_key"]
     assert all(t["team_key"] and t["team_name"] for f in ev.values() for e in f.values() for t in e["by_team"])
     un02 = next(e for f in ev.values() for m, e in f.items() if m == "UN-02")
     assert all(i["item_type"] == "action" for i in un02["items"])

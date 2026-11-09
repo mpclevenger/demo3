@@ -60,6 +60,8 @@ def check_upload(feed, kept_bytes, entry, kept_info):
         out["refused"].append(f"It can't be read as a {name} file: {err}")
         return out
     rows, aside, notes = r.get("rows") or r.get("people") or [], r.get("set_aside") or [], r.get("notes") or []
+    if "members" in r:                        # AD owner groups: kept compact, counted in its summary (6 Nov 2026)
+        rows = range((r.get("summary") or {}).get("rows", 0))
     out["rows"], out["set_aside"] = len(rows), len(aside)
     needed = _fields_needed(feed)
     missing = (kept_info or {}).get("fields_not_found") or []

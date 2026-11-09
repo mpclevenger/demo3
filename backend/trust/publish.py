@@ -191,6 +191,7 @@ def build(empty_months=()):
         # The firm tolerance threshold is a setting; with no value set, the page leaves out the line and the sentence.
         firm_tolerance=_firm_tolerance(),
         min_families_for_threshold=score_month.min_families(score_month.thresholds_config()),   # shown in the dictionary
+        behind_peers_flag=bool(score_month.thresholds_config().get("behind_peers_flag", True)),   # owner, 8 Nov 2026: Flags section shown only when on
         caps=scoring.caps_from(score_month.thresholds_config().get("caps")),   # the current caps; each month keeps its own
         code_links=codelinks.links(),      # links from each metric card to its code (owner, 5 Nov 2026); {} without code_repo_url
         env_label=env_label(), test_env=is_test_env(), live=True, feeds=list(store.FEEDS), families=families, periods=periods, entries=[], connectors=[], weight_overrides=[],

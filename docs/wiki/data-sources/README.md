@@ -16,7 +16,7 @@ How the files flow into the numbers: [data flow per source](../architecture.md#p
 | `hr_mapping` | Tech Risk | places people in product families: `product_line_owners.json` (`product_line`, `owner_email`, optional `band`; several leads per product line allowed) or the older CSV (`Product Family`, `Owner Email(s)`, `Band`); everyone under a lead in HR belongs to that family. Not used while `team_grouping` is `l3` (teams from HR level 3; owner, 3 Nov 2026) ([doc 13 §8](../../design/13_hr_dataset.md)) | [Product family owners](hr_mapping.md) |
 | `repos` | Tech Risk (GitHub export) | TR-02 (scored from 4 Nov 2026): 5 hygiene checks per active repo, owner = the human with most of the last 20 commits, via HR (owner, 3 Nov 2026). Made by `tools/github_repo_export.py` | [GitHub repos](repos.md) |
 | `tcc` | Change | TE-01, TE-02 | [TCC changes](tcc.md) |
-| `ntcc` | Change | TE-06, not on the scorecard yet (owner, 2 Nov 2026: changes outside TCC are left out of TE-01). The file still uploads and is read ([doc 14](../../design/14_tcc_dataset.md#non-tcc-export-12-columns-r-tcc-13)) | [Non-TCC changes](ntcc.md) |
+| `ntcc` | Change | TE-01 (changes outside TCC, owner 8 Nov 2026). TE-01 needs it and the TCC file. Read as described ([doc 14](../../design/14_tcc_dataset.md#non-tcc-export-12-columns-r-tcc-13)) | [Non-TCC changes](ntcc.md) |
 | `postmortems` | Ops | UN-02 (which incidents count); UN-01 (unique Critical and SWE `incident_id`s, owner 2 Nov 2026) | [Postmortems](postmortems.md) |
 | `actions` | Ops | UN-02 | [Action items](actions.md) |
 | `cx_sast` | Cyber | SE-01 | [Checkmarx SAST](cx_sast.md) (JSON) |

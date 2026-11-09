@@ -10,7 +10,7 @@ Before you start each month: check that you have the HR file, the product family
 
 ## Set the tolerance thresholds (calibrate)
 
-Done once, and again each quarter when Tech Risk reviews them. A *tolerance threshold* is the pair of numbers that sets a metric's colours: the Green tolerance (the edge of Green) and the Red limit (the edge of Red). Until you freeze them, TRUST works them out afresh each month from that month's own family results (the "prevailing median"). Calibrating pools several months you have already scored (say July to October 2026), works out the thresholds for each metric on the prevailing median, and freezes them in `config/thresholds.json`. Real policy thresholds, like TE-01's, are never touched.
+Done once, and again each quarter when Tech Risk reviews them. A *tolerance threshold* is the pair of numbers that sets a metric's colours: the Green tolerance (the edge of Green) and the Red limit (the edge of Red). Until you freeze them, TRUST works them out afresh each month from that month's own family results (the "prevailing median"). Calibrating pools several months you have already scored (say July to October 2026), works out the thresholds for each metric on the prevailing median, and freezes them in `config/thresholds.json`. Real policy thresholds are never touched.
 
 - [ ] Score each month you want to use (`python manage.py score YYYY-MM`). A month that isn't scored is refused.
 - [ ] Look first. This changes nothing: `python manage.py calibrate 2026-07 2026-08 2026-09 2026-10`. It prints, per metric, how many family results were used, the Green tolerance, the Red limit and the Amber band. A metric with fewer than 5 results is not set, and the table says why.
@@ -91,3 +91,21 @@ On the platform every command uses the Postgres add-on (`DATABASE_URL`, set by t
 ## Who to ask
 
 Provider contacts are placeholders until the owner supplies the list. The first line of each [data source page](data-sources/README.md) names the provider; the contact line says "to be supplied".
+
+## Change a metric
+
+Everything about a metric except the counting itself lives in **`config/metrics.json`**, one section per metric (owner, 8 Nov 2026).
+
+| To change | Edit in `config/metrics.json` | Also |
+|---|---|---|
+| A known limit | `known_limits`: add a line `{"limit": "...", "mitigation": "...", "status": "Partly mitigated"}`, or delete one | Nothing else |
+| Card text (risk it watches, population, exclusions, time basis) | `card` | Nothing else |
+| Whether it's live | `status`: `Measured`, `In progress`, `Planned` or `Coming soon` (anything but Measured counts in no score) | A metric moving to Measured needs its counting code first |
+| Name or formula labels | `name`, `numerator_label`, `denominator_label` | Nothing else |
+| Phrases on the family page | `wording` (`outstanding` = what's short, `counts` = "n of d …") | Nothing else |
+| Which files it needs | `counting.files` | |
+| **How it is counted** | `counting` describes it | The metric's function in `backend/trust/measure.py`, and its test |
+| Tolerance threshold | (not here) | `config/thresholds.json`; ask the owner first |
+
+After an edit: run `python -m pytest -q tests` (it catches a broken file), deploy, then update the month. Locked months keep their numbers. Any scoring change is the owner's decision first (AGENTS.md).
+

@@ -15,32 +15,10 @@ from . import config, storage
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
-# What to link for each metric: (file under backend/trust/, function, what it does in plain words).
+# What to link for each metric: (file under backend/trust/, function, what it does in plain words[, marker]).
 # Shared steps (thresholds, statuses, block and TRUST maths) are linked on every card after the metric's own.
-METRIC_CODE = {
-    "TE-01": [("measure.py", "te01", "Counts approved and deployed changes per family"),
-              ("intake/tcc.py", "read", "Reads the TCC export and flags each change")],
-    "TE-02": [("measure.py", "te02", "Counts releases and reverts in each 7-day window"),
-              ("score_month.py", "score_month", "Automatic Red rule for client impact", 'c.get("client_impact")'),
-              ("intake/tcc.py", "read", "Reads the TCC export and flags each change")],
-    "UN-01": [("measure.py", "un01", "Counts Critical and SWE incidents that ended in the month"),
-              ("linking.py", "link_actions_to_incidents", "Links incidents to families through their actions")],
-    "UN-02": [("measure.py", "un02", "Counts postmortem actions open and overdue at month end")],
-    "SE-01": [("measure.py", "checkmarx", "Counts scanned repos passing the Checkmarx SAST policy"),
-              ("intake/repos.py", "match_checkmarx", "Matches Checkmarx repos to GitHub repos and families")],
-    "SE-02": [("measure.py", "checkmarx", "Counts scanned repos passing the Checkmarx SCA policy"),
-              ("intake/repos.py", "match_checkmarx", "Matches Checkmarx repos to GitHub repos and families")],
-    "TR-01": [("measure.py", "tr01", "Counts active repos linked to a confirmed app"),
-              ("intake/app_links.py", "link", "Links the app inventory's service repos to GitHub repos")],
-    "TR-02": [("measure.py", "tr02", "Counts hygiene checks passed across active repos"),
-              ("intake/repos.py", "read", "Reads the GitHub export and judges the five checks")],
-    "RE-01": [("measure.py", "re01", "Tier 0/1 apps with a completed DR test in 12 months"),
-              ("measure.py", "_tested", "How a test counts (status, kind, date window)"),
-              ("intake/dr_tests.py", "read", "Reads the DR tests file")],
-    "RE-03": [("measure.py", "re03", "Tier 0–2 apps with a successful DR test or tabletop in 12 months"),
-              ("measure.py", "_tested", "How a test counts (status, kind, date window)"),
-              ("intake/dr_tests.py", "read", "Reads the DR tests file")],
-}
+METRIC_CODE = {mid: [tuple(c[k] for k in ("file", "function", "what", "find") if c.get(k)) for c in x["counting"]["code"]]
+               for mid, x in config.metrics().items() if (x.get("counting") or {}).get("code")}   # counting.code in config/metrics.json
 SHARED = [("score_month.py", "thresholds_for", "Tolerance thresholds: policy or prevailing median"),
           ("score_month.py", "status_of", "Green, Amber or Red from the result and thresholds"),
           ("scoring.py", "block", "Building block score from its metrics, with caps"),
