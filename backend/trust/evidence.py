@@ -102,6 +102,133 @@ def to_csv(rows, month, family_name):
     return "﻿" + buf.getvalue()           # the byte-order mark makes Excel read names with accents correctly
 
 
+# ---- the data behind each metric, as a table (owner, 9 Nov 2026) ----
+# One table per metric with its own key details (these releases, these repos, these incidents): shown on the
+# family page (first rows, then "Show all"), downloaded on its own as a CSV, and as one tab per metric in the
+# Excel download. The columns are counting.columns in config/metrics.json.
+
+def columns(mid):
+    """[{label, field, as?}] for one metric; a plain item / what-it-shows pair when the metric lists none."""
+    return _COUNTING.get(mid, {}).get("columns") or [{"label": "Item", "field": "id"}, {"label": "What it shows", "field": "_result"}]
+
+
+def _fmt(col, it, mid):
+    f, how = col.get("field"), col.get("as")
+    v = describe(mid, it)["result"] if f == "_result" else it.get(f)
+    if how == "yes_no":
+        return "Yes" if v else "No"
+    if how == "date":
+        return _day(v)
+    if how == "list":
+        return ", ".join(str(x) for x in (v or []))
+    if how == "map":
+        vals = {str(k).lower(): x for k, x in (col.get("values") or {}).items()}     # providers vary the case
+        return vals.get(str(v).lower(), "" if v is None else str(v))
+    if how == "of":
+        return f"{v or 0} of {it.get(col.get('of_field') or 'of', '')}"
+    return "" if v is None else str(v)
+
+
+# The columns every table adds after the metric's own (owner, 9 Nov 2026: the minimum for the drill-down).
+# Several people (an app's owners, an incident's assignees) are listed in the same order in each column.
+WHO_COLUMNS = (("name", "Name"), ("sam", "ID (SAM account)"), ("email", "Email"), ("l4", "L4 manager"),
+               ("l4_email", "L4 manager email"), ("l3", "L3 manager"), ("l3_email", "L3 manager email"))
+
+
+def _who_cell(who, key):
+    vals = [w.get(key) or "" for w in who or []]
+    return "; ".join(vals) if any(vals) else ""
+
+
+def table(mid, items, team=None):
+    """-> {columns, types, rows: [{cells, detail, who, team, as_of, attention, team_key, link}]}: the metric's own
+    columns (counting.columns) in cells, then the shared ones; rows that need attention first."""
+    cols = columns(mid)
+    rows = []
+    for it in items:
+        if team and (it.get("team_key") or NO_TEAM[0]) != team:
+            continue
+        rows.append({"cells": [_fmt(c, it, mid) for c in cols], "attention": describe(mid, it)["concern"],
+                     "detail": it.get("detail") or "", "who": [{k: w.get(k) or "" for k, _ in WHO_COLUMNS} for w in it.get("who") or []],
+                     "team": it.get("team") or "", "as_of": it.get("as_of") or "",
+                     "team_key": it.get("team_key") or NO_TEAM[0], "link": it.get("link") or None})
+    rows.sort(key=lambda r: not r["attention"])          # stable: within each group the provider's order
+    return {"columns": [c["label"] for c in cols], "types": [c.get("as") or "" for c in cols], "rows": rows}
+
+
+def flat_head(t):
+    """The download's header row: needs attention, the metric's columns, then the shared columns."""
+    return (["Needs attention"] + t["columns"] + ["Detail"] + [label for _, label in WHO_COLUMNS]
+            + ["Team", "Product family", "As of (file uploaded)", "Link"])
+
+
+def flat_row(r, family_name):
+    return [_cell(x) for x in (["Yes" if r["attention"] else "No"] + r["cells"] + [r["detail"]]
+                               + [_who_cell(r["who"], k) for k, _ in WHO_COLUMNS]
+                               + [r["team"], family_name, r["as_of"], r["link"] or ""])]
+
+
+def section_csv(scored, fid, mid, month, family_name, team=None, team_name=None):
+    t = table(mid, ((scored.get("items") or {}).get(fid) or {}).get(mid) or [], team)
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    who = f"{family_name}" + (f", {team_name}" if team_name else "")
+    w.writerow([f"TRUST, {month}: {_name(mid)} ({mid}) for {who}. Each row is one item behind the number; "
+                f"Needs attention = Yes is an item that pulls the result down."])
+    w.writerow(flat_head(t))
+    for r in t["rows"]:
+        w.writerow(flat_row(r, family_name))
+    return "\ufeff" + buf.getvalue(), len(t["rows"])
+
+
+def _name(mid):
+    return config.metrics().get(mid, {}).get("name", mid)
+
+
+def workbook(scored, fid, month, family_name, results=None):
+    """The family's items as an Excel workbook: an About tab, then one tab per metric (owner, 9 Nov 2026)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    wb = Workbook()
+    about = wb.active
+    about.title = "About"
+    by_metric = (scored.get("items") or {}).get(fid) or {}
+    order = [m for m in config.metrics() if m in by_metric]
+    about.append([f"TRUST items for {family_name}, {month}"])
+    about["A1"].font = Font(bold=True, size=13)
+    about.append(["Each tab is one metric: every item behind its number, the items that pull it down first. "
+                  "Contains people's names: confidential, for this family's use only."])
+    about.append([])
+    about.append(["Tab", "Metric", "Result", "Status", "Items", "Need attention"])
+    for c in about[4]:
+        c.font = Font(bold=True)
+    tabs = []
+    for mid in order:
+        t = table(mid, by_metric[mid])
+        r = (results or {}).get(mid) or {}
+        val, unit = r.get("value"), config.metrics().get(mid, {}).get("unit") or ""
+        tab = mid
+        about.append([tab, _cell(_name(mid)), "" if val is None else f"{val:g}%" if unit == "%" else f"{val:g} {unit}", r.get("status") or "",
+                      len(t["rows"]), sum(x["attention"] for x in t["rows"])])
+        tabs.append((tab, mid, t))
+    for tab, mid, t in tabs:
+        ws = wb.create_sheet(tab)
+        ws.append([f"{_name(mid)} ({mid}), {family_name}, {month}"])
+        ws["A1"].font = Font(bold=True)
+        head = flat_head(t)
+        ws.append(head)
+        for c in ws[2]:
+            c.font = Font(bold=True)
+        for r in t["rows"]:
+            ws.append(flat_row(r, family_name))
+        ws.freeze_panes = "A3"
+        for i, w in enumerate([16] + [max(12, min(48, len(h) + 4)) for h in head[1:-1]] + [40], start=1):
+            ws.column_dimensions[ws.cell(row=2, column=i).column_letter].width = w
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue(), sum(len(t["rows"]) for _, _, t in tabs)
+
+
 # ---- evidence.json: the shape the page's drill-down reads (EV[month][family][metric]) ----
 
 TYPES = {mid: c["item_type"] for mid, c in _COUNTING.items() if c.get("item_type")}
@@ -178,6 +305,7 @@ def page_evidence(scored, month):
                              "person": it.get("person"), "link": it.get("link"),
                              "attributes": {"app_owners": ", ".join(it["app_owners"])} if it.get("app_owners") else {}})
             out.setdefault(fid, {})[mid] = {
+                "table": table(mid, items),
                 "by_team": sorted(teams.values(), key=lambda t: (-t["den"], t["team_name"])), "by_app": _by_app(mid, items),
                 "items": rows, "n_items": len(rows), "excluded_count": 0}
     return out

@@ -1,6 +1,6 @@
 # 17 — Data intake architecture (CSV/JSON files now, Jira and GitHub next)
 
-> **Superseded for storage by doc 11 (13 tables) and by the built intake in `backend/trust/intake/` and `store.py`; kept for history. Where this document and the code differ, the code is right.** The `src_*` schemas, the `raw_` and `std_` tables, `evidence_item`, the 33 tables and the `UNATTRIBUTED` name below are the old design; the built system keeps cut-down files in `kept_file` and says "Not yet mapped".
+> **Superseded for storage by doc 11 (14 tables) and by the built intake in `backend/trust/intake/` and `store.py`; kept for history. Where this document and the code differ, the code is right.** The `src_*` schemas, the `raw_` and `std_` tables, `evidence_item`, the 33 tables and the `UNATTRIBUTED` name below are the old design; the built system keeps cut-down files in `kept_file` and says "Not yet mapped".
 
 Status: **design approved by the owner, 1 Nov 2026 (D-83); changed by the owner 2 Nov 2026: every file is independent (§3), files are read tolerantly (§3), every month stands alone.** Builds on `11_data_model_v2.md` (33 tables) and the dataset docs 13–16 and `QUESTION_BANK.md`.
 

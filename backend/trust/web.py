@@ -16,7 +16,7 @@ import re
 
 from flask import Flask, Response, g, jsonify, request
 
-from . import access, evidence, jobs, lock as locking, mapping, publish, score_month, storage, store
+from . import lost, access, evidence, jobs, lock as locking, mapping, publish, score_month, storage, store
 from .intake.common import upload_time
 
 app = Flask(__name__)
@@ -377,6 +377,76 @@ def decide_proposal(pid):
     return jsonify(ok=True, proposal=storage.proposal(pid))
 
 
+# ---- Lost and Found (owner, 9 Nov 2026): unplaced items, claimed by a family lead, approved by Tech Risk ----
+
+def _families_of(month):
+    """{family id: name} for a month: its scored families, else the owners file as mapped."""
+    scored = storage.load_month("scored", month)
+    if scored and scored.get("families"):
+        return {f["id"]: f["name"] for f in scored["families"]}
+    mapped = storage.load_month("mapped", month) or {}
+    rows = ((mapped.get("feeds") or {}).get("hr_mapping") or {}).get("rows") or []
+    return {r["family_id"]: r.get("family") or r["family_id"] for r in rows if r.get("family_id")}
+
+
+@app.get("/api/lost/<month>")
+def lost_list(month):
+    """Everyone can see the page (owner: "so people can see it"); claiming and deciding are checked below."""
+    store._check(store.FEEDS[0], month)
+    mapped = storage.load_month("mapped", month)
+    cl = storage.claims()
+    return jsonify(ok=True, month=month, mapped=mapped is not None, items=lost.items(mapped) if mapped else [],
+                   claims=cl, families=_families_of(month), claims_used=(mapped or {}).get("claims_used") or [])
+
+
+@app.post("/api/claims")
+def add_claim():
+    body = request.get_json(silent=True) or {}
+    month, family = str(body.get("month") or ""), str(body.get("family") or "")
+    feed, item = str(body.get("feed") or ""), str(body.get("item") or "").strip()[:300]
+    store._check(store.FEEDS[0], month)
+    if feed not in lost.KINDS or not item:
+        raise Refused("Choose an item from the Lost and found list.")
+    fams = _families_of(month)
+    if family not in fams:
+        raise Refused("Choose the product family it belongs to.")
+    require("claim", family)
+    by = _who(body)
+    why = str(body.get("why") or "").strip()[:1000]
+    if not why:
+        raise Refused("Say why it belongs to the family, so Tech Risk can check.")
+    if any(c["feed"] == feed and str(c["item"]) == item and c["status"] in ("draft", "approved") for c in storage.claims()):
+        raise Refused("This item already has a claim waiting or approved. Ask Tech Risk to release it first.")
+    c = storage.add_claim({"feed": feed, "item": item, "label": str(body.get("label") or "")[:300],
+                           "family_id": family, "month": month, "why": why, "by": by})
+    storage.log("claim", by, month, f"claimed {lost.KINDS[feed][0].lower()} {item} for {fams[family]}",
+                {"claim_id": c["id"], "feed": feed, "item": item, "family": family})
+    return jsonify(ok=True, claim=c)
+
+
+@app.post("/api/claims/<int:cid>/decide")
+def decide_claim(cid):
+    body = request.get_json(silent=True) or {}
+    by, decision = _who(body), body.get("decision")
+    reason = str(body.get("reason") or "").strip()[:1000]
+    if decision not in storage.CLAIM_MOVES:
+        raise Refused("Choose approve, return, withdraw or release.")
+    if decision in ("returned", "released") and not reason:
+        raise Refused("Say why, so the person who claimed it can see.")
+    c = storage.claim(cid)
+    if c is None:
+        raise Refused("There is no such claim.")
+    # Tech Risk decides (owner, 9 Nov 2026); the person who claimed it may withdraw their own claim while it waits.
+    if not (decision == "withdrawn" and c["by"] == by):
+        require("run_month")
+    out = storage.decide_claim(cid, decision, by, reason)
+    if out is None:
+        raise Refused(f"This claim is {c['status']}, so it can't be {decision} now.")
+    storage.log("claim", by, c["month"], f"claim {cid} on {c['feed']} {c['item']}: {decision}",
+                {"claim_id": cid, "decision": decision, "family": c["family_id"]})
+    return jsonify(ok=True, claim=out)
+
+
 # ---- data contracts (owner, 4 Nov 2026): requested from the Data dictionary page, decided by Tech Risk ----
 
 @app.get("/api/contracts")
@@ -465,3 +535,59 @@ def family_items_csv(month, family):
     storage.log("download", by, month, f"items for {family}", {"family": family, "rows": len(rows)})
     return Response(body, mimetype="text/csv", headers={
         "Content-Disposition": f'attachment; filename="trust-items-{family}-{month}.csv"'})
+
+
+def _scored_family(month, family):
+    """(scored month, family name) or a 404 Response; the person must be allowed to download the family's data."""
+    require("download", family)
+    store._check(store.FEEDS[0], month)
+    scored = storage.load_month("scored", month)
+    families = {f["id"]: f["name"] for f in (scored or {}).get("families", [])}
+    if scored is None or family not in families:
+        return None, Response("Nothing to download: that month or family isn't on the scorecard.", status=404,
+                              mimetype="text/plain")
+    return scored, families[family]
+
+
+def _download_by():
+    return _by(g.person) if not g.person["open"] else (" ".join((request.args.get("by") or "").split())[:100] or "name not given")
+
+
+# ---- one metric's items as a CSV file: the "Download this table" under each drill-down (owner, 9 Nov 2026) ----
+
+@app.get("/api/items/<month>/<family>/<metric>.csv")
+def metric_items_csv(month, family, metric):
+    scored, name = _scored_family(month, family)
+    if scored is None:
+        return name
+    if metric not in evidence.config.metrics():
+        return Response("No such metric.", status=404, mimetype="text/plain")
+    team = (request.args.get("team") or "").strip()[:200] or None
+    team_name = None
+    if team:
+        team_name = next((it.get("team") for it in ((scored.get("items") or {}).get(family) or {}).get(metric) or []
+                          if it.get("team_key") == team), None) or ("Not placed with a team" if team == evidence.NO_TEAM[0] else team)
+    body, n = evidence.section_csv(scored, family, metric, month, name, team, team_name)
+    storage.log("download", _download_by(), month, f"{metric} items for {family}" + (f" ({team_name})" if team else ""),
+                {"family": family, "metric": metric, "team": team, "rows": n})
+    tail = f"-{secure_name(team)}" if team else ""
+    return Response(body, mimetype="text/csv", headers={
+        "Content-Disposition": f'attachment; filename="trust-{metric}-{family}{tail}-{month}.csv"'})
+
+
+# ---- every item as an Excel workbook, one tab per metric (owner, 9 Nov 2026) ----
+
+@app.get("/api/items/<month>/<family>.xlsx")
+def family_items_xlsx(month, family):
+    scored, name = _scored_family(month, family)
+    if scored is None:
+        return name
+    results = (((scored.get("period") or {}).get("families") or {}).get(family) or {}).get("metrics") or {}
+    body, n = evidence.workbook(scored, family, month, name, results)
+    storage.log("download", _download_by(), month, f"items for {family} (Excel, one tab per metric)", {"family": family, "rows": n})
+    return Response(body, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={
+        "Content-Disposition": f'attachment; filename="trust-items-{family}-{month}.xlsx"'})
+
+
+def secure_name(s):
+    return "".join(ch if ch.isalnum() or ch in "-_." else "-" for ch in s)[:60]

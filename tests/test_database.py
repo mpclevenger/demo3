@@ -230,3 +230,16 @@ def test_update_lock_lives_with_the_process(db):
     finally:
         jobs.WAIT = wait
     assert jobs.status("2026-09", job)["state"] == "finished"
+
+
+def test_lost_and_found_claims_in_the_database(db):
+    """Owner, 9 Nov 2026: claims are a table; a decision moves a claim once (draft -> approved -> released)."""
+    from trust import storage
+    c = storage.add_claim({"feed": "tcc", "item": "T9", "label": "Change T9", "family_id": "payments",
+                           "month": "2026-09", "why": "our vendor", "by": "Pat"})
+    assert c["status"] == "draft" and storage.claim(c["id"])["why"] == "our vendor"
+    assert storage.decide_claim(c["id"], "released", "Rita", "x") is None            # only an approved claim is released
+    assert storage.decide_claim(c["id"], "approved", "Rita")["status"] == "approved"
+    assert storage.decide_claim(c["id"], "approved", "Rita") is None                 # decided once
+    assert storage.decide_claim(c["id"], "released", "Rita", "HR fixed")["reason"] == "HR fixed"
+    storage.log("claim", "Rita", "2026-09", "claim 1 released", {"claim_id": c["id"]})   # the log admits 'claim'

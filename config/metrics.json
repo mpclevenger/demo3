@@ -4,6 +4,7 @@
     "Known limitations: one line each, {\"limit\": \"...\", \"mitigation\": \"...\", \"status\": \"...\"}. Status is usually Mitigated, Partly mitigated or No mitigation yet. Add a line to add one; delete the line to remove it. An empty list hides the section on the card.",
     "Risk it watches: card.risks lists the risk files it watches, by file name without .yaml (e.g. \"external-data-breach-tool-use\"). The files are copies of the risk assessment engine's risk files, kept in config/risks/. With none listed, the card shows card.risk as text.",
     "When it counts: card.time_text, one plain sentence.",
+    "The data behind a metric: counting.columns lists the metric's own columns (its references: the RPD, repo, action, incident or application, and its key facts) in its drill-down table on the family page, its section download and its tab in the Excel download, in order: {\"label\": \"...\", \"field\": \"...\"}. \"as\" sets how a value reads: yes_no, date, list, map (with \"values\"), of (with \"of_field\", e.g. 4 of 5). Every table then adds the same columns itself: Detail, the person (name, ID = SAM account, email), team, their L4 and L3 managers from HR, product family and the as-of date (the day the file was uploaded). Shows once deployed; the people columns after Update the scorecard.",
     "status: Measured (counted and scored), In progress (being built; not scored yet), Planned (designed, no data source yet) or Coming soon (no source agreed). Anything but Measured counts in no score and shows as No data.",
     "Tolerance thresholds stay in config/thresholds.json.",
     "After an edit: run the tests (python -m pytest -q tests), then deploy. Wording, cards, limitations, risks and status show once deployed; a change to how a metric is counted shows after Update the scorecard for each month.",
@@ -61,6 +62,22 @@
         "item_type": "repo",
         "items_name": "Repos mapped to an app",
         "numerator_field": "passed",
+        "columns": [
+          {
+            "label": "Repo",
+            "field": "id"
+          },
+          {
+            "label": "Mapped to an app",
+            "field": "passed",
+            "as": "yes_no"
+          },
+          {
+            "label": "Apps",
+            "field": "apps",
+            "as": "list"
+          }
+        ],
         "empty_reason": "No active repos for this family: not scored",
         "empty_reason_unplaced": "No active repos placed with this family yet (each needs an owner found in HR by email): not scored",
         "code": [
@@ -148,6 +165,23 @@
         "files": ["repos"],
         "item_type": "repo",
         "items_name": "Repo hygiene checks",
+        "columns": [
+          {
+            "label": "Repo",
+            "field": "id"
+          },
+          {
+            "label": "Checks passed",
+            "field": "passed_checks",
+            "as": "of",
+            "of_field": "of"
+          },
+          {
+            "label": "Failing checks",
+            "field": "failed",
+            "as": "list"
+          }
+        ],
         "empty_reason": "No active repos for this family: not scored",
         "empty_reason_unplaced": "No active repos placed with this family yet (each needs an owner found in HR by email): not scored",
         "code": [
@@ -318,6 +352,34 @@
         "item_type": "application",
         "items_name": "Tier 0/1 DR test completed in 12 months",
         "numerator_field": "passed",
+        "columns": [
+          {
+            "label": "Application",
+            "field": "id"
+          },
+          {
+            "label": "Ref",
+            "field": "ref"
+          },
+          {
+            "label": "Recovery tier",
+            "field": "tier"
+          },
+          {
+            "label": "DR test in the last 12 months",
+            "field": "passed",
+            "as": "yes_no"
+          },
+          {
+            "label": "Last test",
+            "field": "tested_on",
+            "as": "date"
+          },
+          {
+            "label": "Test type",
+            "field": "test_kind"
+          }
+        ],
         "empty_reason": "No Tier 0 or 1 applications for this family: not scored",
         "empty_reason_unplaced": "No ITDR applications placed with this family yet (Business Product Area not matched): not scored",
         "code": [
@@ -435,6 +497,34 @@
         "item_type": "application",
         "items_name": "Resiliency test passed in 12 months",
         "numerator_field": "passed",
+        "columns": [
+          {
+            "label": "Application",
+            "field": "id"
+          },
+          {
+            "label": "Ref",
+            "field": "ref"
+          },
+          {
+            "label": "Recovery tier",
+            "field": "tier"
+          },
+          {
+            "label": "Successful test in the last 12 months",
+            "field": "passed",
+            "as": "yes_no"
+          },
+          {
+            "label": "Last test",
+            "field": "tested_on",
+            "as": "date"
+          },
+          {
+            "label": "Test type",
+            "field": "test_kind"
+          }
+        ],
         "empty_reason": "No Tier 0, 1 or 2 applications for this family: not scored",
         "empty_reason_unplaced": "No ITDR applications placed with this family yet (Business Product Area not matched): not scored",
         "code": [
@@ -508,6 +598,29 @@
         "files": ["postmortems", "app_inventory"],
         "item_type": "incident",
         "items_name": "Critical and SWE incidents",
+        "columns": [
+          {
+            "label": "Incident",
+            "field": "id"
+          },
+          {
+            "label": "Rating",
+            "field": "class",
+            "as": "map",
+            "values": {"SWE": "SWE (DEFCON 1-2)", "Critical": "Critical (DEFCON 3-5)"}
+          },
+          {
+            "label": "Ended",
+            "field": "ended",
+            "as": "date"
+          },
+          {
+            "label": "Placed with the family by",
+            "field": "placed_by",
+            "as": "map",
+            "values": {"action assignees": "Who the postmortem actions are assigned to", "user_stakeholders": "People named on the postmortem"}
+          }
+        ],
         "code": [
           {"file": "measure.py", "function": "un01", "what": "Counts Critical and SWE incidents that ended in the month"},
           {"file": "linking.py", "function": "link_actions_to_incidents", "what": "Links incidents to families through their actions"}
@@ -579,6 +692,30 @@
         "item_type": "action",
         "items_name": "Overdue postmortem actions",
         "numerator_field": "overdue",
+        "columns": [
+          {
+            "label": "Action",
+            "field": "id"
+          },
+          {
+            "label": "Incident",
+            "field": "incident"
+          },
+          {
+            "label": "Status",
+            "field": "status"
+          },
+          {
+            "label": "Due",
+            "field": "due",
+            "as": "date"
+          },
+          {
+            "label": "Overdue",
+            "field": "overdue",
+            "as": "yes_no"
+          }
+        ],
         "code": [
           {"file": "measure.py", "function": "un02", "what": "Counts postmortem actions open and overdue at month end"}
         ],
@@ -711,6 +848,26 @@
         "item_type": "repo",
         "items_name": "Checkmarx SAST policy",
         "numerator_field": "passed",
+        "columns": [
+          {
+            "label": "Checkmarx project",
+            "field": "id"
+          },
+          {
+            "label": "GitHub repo",
+            "field": "gh_repo"
+          },
+          {
+            "label": "Passes the policy",
+            "field": "passed",
+            "as": "yes_no"
+          },
+          {
+            "label": "Apps",
+            "field": "apps",
+            "as": "list"
+          }
+        ],
         "empty_reason": "No repos scanned: not scored",
         "empty_reason_unplaced": "No Checkmarx repos placed with this family yet (each needs a matching GitHub repo whose owner is in the family): not scored",
         "code": [
@@ -778,6 +935,26 @@
         "item_type": "repo",
         "items_name": "Checkmarx SCA policy",
         "numerator_field": "passed",
+        "columns": [
+          {
+            "label": "Checkmarx project",
+            "field": "id"
+          },
+          {
+            "label": "GitHub repo",
+            "field": "gh_repo"
+          },
+          {
+            "label": "Passes the policy",
+            "field": "passed",
+            "as": "yes_no"
+          },
+          {
+            "label": "Apps",
+            "field": "apps",
+            "as": "list"
+          }
+        ],
         "empty_reason": "No repos scanned: not scored",
         "empty_reason_unplaced": "No Checkmarx repos placed with this family yet (each needs a matching GitHub repo whose owner is in the family): not scored",
         "code": [
@@ -1072,9 +1249,31 @@
       },
       "counting": {
         "files": ["tcc", "ntcc"],
-        "item_type": "deployment",
+        "item_type": "change",
         "items_name": "Change ticket adoption",
         "numerator_field": "through_tcc",
+        "columns": [
+          {
+            "label": "Change",
+            "field": "id"
+          },
+          {
+            "label": "Route",
+            "field": "source",
+            "as": "map",
+            "values": {"TCC": "TCC", "Non-TCC": "Outside TCC (Non-TCC)"}
+          },
+          {
+            "label": "Created",
+            "field": "created",
+            "as": "date"
+          },
+          {
+            "label": "Deployed",
+            "field": "deployed",
+            "as": "date"
+          }
+        ],
         "empty_reason": "No deployed changes this month: not scored",
         "code": [
           {"file": "measure.py", "function": "te01", "what": "Counts deployed changes through TCC out of all deployed changes per family"},
@@ -1084,20 +1283,20 @@
       }
     },
     "TE-02": {
-      "name": "Release revert rate (7 days)",
+      "name": "Releases without a revert (7 days)",
       "status": "Measured",
       "block": "REL",
       "provider": "Change",
       "unit": "%",
-      "higher_is_better": false,
+      "higher_is_better": true,
       "scored": true,
-      "definition": "Share of production releases reverted or rolled back within 7 days.",
-      "numerator_label": "Prod releases reverted within 7 days",
+      "definition": "Share of production releases not reverted or rolled back within 7 days.",
+      "numerator_label": "Prod releases not reverted within 7 days",
       "denominator_label": "Prod releases",
       "override_rule": "client_impact",
       "card": {
         "source_system": "Change tool",
-        "definition": "Share of production releases backed out within 7 days.",
+        "definition": "Share of production releases not backed out within 7 days: 9 of 10 releases without a revert is 90%.",
         "min_pop": 1,
         "zero_rule": "NA",
         "rolling_months": 1,
@@ -1120,7 +1319,7 @@
         "indicator_type": "KPI",
         "risk_monitored": "Weak testing lets bad releases reach production.",
         "risk": "Releases that have to be backed out point to weak pre-production testing, and bad releases that reach production can affect clients.",
-        "population": "Production releases through TCC whose 7-day revert window ended in the month. A release is reverted when its overall outcome is 40, 50, 60 or 90 (backed out, including a backout started by the client).",
+        "population": "Production releases through TCC whose 7-day revert window ended in the month. A release is reverted when its overall outcome is 40, 50, 60 or 90 (backed out, including a backout started by the client); every other known outcome counts as a release without a revert.",
         "exclusions_text": "Outcome 95 (obsoleted). Outcome 99 (unknown) and a blank outcome are left out of the rate and counted separately.",
         "rule_text": null,
         "zero_text": "No releases in the month: not scored.",
@@ -1135,16 +1334,41 @@
           "verb_many": "were reverted within 7 days",
           "fewer": "reverted releases"
         },
-        "counts": {"num_one": "revert", "num_many": "reverts", "join": "out of", "den_one": "release", "den_many": "releases"}
+        "counts": {"den_one": "release", "den_many": "releases", "verb_one": "had no revert within 7 days", "verb_many": "had no revert within 7 days"}
       },
       "counting": {
         "files": ["tcc"],
         "item_type": "release",
-        "items_name": "Releases reverted",
-        "numerator_field": "revert",
+        "items_name": "Releases",
+        "numerator_field": "no_revert",
+        "columns": [
+          {
+            "label": "Release (RPD)",
+            "field": "id"
+          },
+          {
+            "label": "Reverted within 7 days",
+            "field": "revert",
+            "as": "yes_no"
+          },
+          {
+            "label": "Outcome code",
+            "field": "outcome"
+          },
+          {
+            "label": "Client impact",
+            "field": "client_impact",
+            "as": "yes_no"
+          },
+          {
+            "label": "Deployed",
+            "field": "deployed",
+            "as": "date"
+          }
+        ],
         "empty_reason": "No production deployments this month: not scored",
         "code": [
-          {"file": "measure.py", "function": "te02", "what": "Counts releases and reverts in each 7-day window"},
+          {"file": "measure.py", "function": "te02", "what": "Counts releases and releases without a revert in each 7-day window"},
           {"file": "score_month.py", "function": "score_month", "what": "Automatic Red rule for client impact", "find": "c.get(\"client_impact\")"},
           {"file": "intake/tcc.py", "function": "read", "what": "Reads the TCC export and flags each change"}
         ]

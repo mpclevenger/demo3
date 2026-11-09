@@ -77,25 +77,40 @@ def te01(feeds, month):
     (Q-NTCC-02), month = Created Date (Q-NTCC-01), working rules until Change Management confirms."""
     out = defaultdict(_blank)
 
-    def add(x, rid, source, tcc, created, deployed):
+    def add(x, rid, source, tcc, created, deployed, feed):
         r = out[x["family_id"]]
         r["denominator"] += 1
         r["numerator"] += tcc
         r["items"].append({"id": rid, "source": source, "through_tcc": tcc, "person": x.get("person"),
                            "team": x.get("team"), "team_key": x.get("team_key"), "created": created,
-                           "deployed": deployed, "link": x.get("link")})
+                           "deployed": deployed, "link": x.get("link"), "who": x.get("who") or [],
+                           "as_of": _asof(feeds, feed),
+                           "detail": _join(x.get("category") and f"{x['category']} change", x.get("status") and f"status {x['status']}",
+                                           x.get("risk_score"))})
 
     for x in feeds.get("tcc", {}).get("rows") or []:
         if x["deployed"] and x["month"] == month:
-            add(x, x["ticket_id"], "TCC", True, x.get("createddateutc"), x.get("lastdeployment"))
+            add(x, x["ticket_id"], "TCC", True, x.get("createddateutc"), x.get("lastdeployment"), "tcc")
     for x in feeds.get("ntcc", {}).get("rows") or []:
         if x["deployed"] and x["month"] == month and not x.get("also_in_tcc"):
-            add(x, x["rpd_id"], "Non-TCC", False, x.get("created"), None)
+            add(x, x["rpd_id"], "Non-TCC", False, x.get("created"), None, "ntcc")
     return out
 
 
+def _asof(feeds, feed):
+    """The date a row's data is as of, for the drill-down (owner, 9 Nov 2026): the day its file was uploaded
+    (Checkmarx: its report date when Cyber gives one)."""
+    v = feeds.get(feed) or {}
+    return str(v.get("as_of") or v.get("uploaded_at") or "")[:10] or None
+
+
+def _join(*parts):
+    return " · ".join(str(x) for x in parts if x not in (None, "", []))
+
+
 def te02(feeds, month):
-    """Prod releases (TCC) reverted: outcome 40/50/60/90 ÷ releases with a known outcome.
+    """Prod releases (TCC) without a revert ÷ releases with a known outcome (owner, 9 Nov 2026: shown the
+    positive way round, so 9 of 10 releases without a revert = 90%). A revert is outcome 40/50/60/90.
 
     Owner, 2 Nov 2026: each release counts in the month its 7-day revert window ends (last deployment
     + 7 days), so a month's figure only includes releases whose window has closed.
@@ -117,10 +132,14 @@ def te02(feeds, month):
             r["no_outcome"] += 1
         else:
             r["denominator"] += 1
-            r["numerator"] += bool(x["revert"])
-            r["items"].append({"id": x["ticket_id"], "revert": bool(x["revert"]), "client_impact": bool(x["client_impact"]),
+            r["numerator"] += not x["revert"]
+            r["items"].append({"id": x["ticket_id"], "revert": bool(x["revert"]), "no_revert": not x["revert"],
+                               "client_impact": bool(x["client_impact"]),
                                "outcome": x.get("overall_outcome"), "person": x.get("person"), "team": x.get("team"), "team_key": x.get("team_key"),
-                               "deployed": x.get("lastdeployment"), "link": x.get("link")})
+                               "deployed": x.get("lastdeployment"), "link": x.get("link"), "who": x.get("who") or [],
+                               "as_of": _asof(feeds, "tcc"),
+                               "detail": _join(x.get("category") and f"{x['category']} change", x.get("risk_score"),
+                                               x.get("status") and f"status {x['status']}")})
     return out
 
 
@@ -151,7 +170,10 @@ def un02(feeds, month):
         r["numerator"] += overdue
         r["items"].append({"id": a["item_ref"], "overdue": overdue, "due_from_blank_eta": a.get("due_from_blank_eta"),
                            "incident": a.get("incident_id"), "due": a.get("due"), "status": a.get("status"),
-                           "person": a.get("person"), "team": a.get("team"), "team_key": a.get("team_key"), "link": a.get("url")})
+                           "person": a.get("person"), "team": a.get("team"), "team_key": a.get("team_key"), "link": a.get("url"),
+                           "who": a.get("who") or [], "as_of": _asof(feeds, "actions"),
+                           "detail": _join(a.get("item_type"), a.get("category"), a.get("severity") and f"severity {a['severity']}",
+                                           a.get("status_raw") and f"status {a['status_raw']}")})
     return out
 
 
@@ -191,7 +213,10 @@ def un01(feeds, month):
             r = out[fam]
             r["numerator"] += 1
             r["items"].append({"id": inc, "class": v["risk_class"], "placed_by": v.get("placed_by"),
-                               "ended": v.get("end_datetime")})
+                               "ended": v.get("end_datetime"), "who": (v.get("who_by_family") or {}).get(fam) or [],
+                               "as_of": _asof(feeds, "postmortems"),
+                               "detail": _join(f"{v.get('postmortems')} postmortem{'s' if v.get('postmortems') != 1 else ''}" if v.get("postmortems") else None,
+                                               f"{v.get('actions')} action{'s' if v.get('actions') != 1 else ''}" if v.get("actions") is not None else None)})
     # Denominator (owner, 9 Nov 2026): the family's confirmed apps in the app inventory, as placed at mapping.
     apps = ((feeds.get("app_inventory") or {}).get("placed") or {}).get("by_family") or {}
     for fam, n in apps.items():
@@ -214,7 +239,8 @@ def checkmarx(feed, feeds, repo_family=None):
         r["overdue_ech"] += x.get("overdue_ech") or 0
         r["items"].append({"id": x["key"], "passed": bool(x["compliant"]), "comment": x.get("comment"),
                            "gh_repo": x.get("gh_repo"), "matched_by": x.get("matched_by"),
-                           "apps": x.get("apps") or [], "app_owners": x.get("app_owners") or []})
+                           "apps": x.get("apps") or [], "app_owners": x.get("app_owners") or [],
+                           "who": x.get("who") or [], "as_of": _asof(feeds, feed), "detail": x.get("comment") or ""})
     return out
 
 
@@ -234,7 +260,11 @@ def tr02(feeds):
                            "protected": bool(x["checks"]["protected"]), "link": x.get("url"),
                            "person": x.get("person"), "team": x.get("team"), "team_key": x.get("team_key"),
                            "owner_email": x.get("owner_email"),
-                           "apps": x.get("apps") or [], "app_owners": x.get("app_owners") or []})
+                           "apps": x.get("apps") or [], "app_owners": x.get("app_owners") or [],
+                           "who": x.get("who") or [], "as_of": _asof(feeds, "repos"),
+                           "detail": _join(x.get("default_branch") and f"main branch {x['default_branch']}",
+                                           x.get("protection_source") and f"protected by {x['protection_source']}",
+                                           x.get("last_activity") and f"last activity {str(x['last_activity'])[:10]}")})
     return out
 
 
@@ -252,7 +282,9 @@ def tr01(feeds):
         r["numerator"] += bool(apps)
         r["items"].append({"id": x["repo"], "passed": bool(apps), "n_apps": len(apps), "link": x.get("url"),
                            "person": x.get("person"), "team": x.get("team"), "team_key": x.get("team_key"),
-                           "owner_email": x.get("owner_email"), "apps": apps, "app_owners": x.get("app_owners") or []})
+                           "owner_email": x.get("owner_email"), "apps": apps, "app_owners": x.get("app_owners") or [],
+                           "who": x.get("who") or [], "as_of": _asof(feeds, "repos"),
+                           "detail": _join(x.get("last_activity") and f"last activity {str(x['last_activity'])[:10]}")})
     return out
 
 
@@ -279,7 +311,7 @@ def _tested(feeds, month, tiers, kinds):
         d = t.get("performed_on")                      # set only for a successful test (dr_tests.py)
         if t.get("itdr_ref") and d and t.get("kind") in kinds and start <= _date(d) < end:
             if t["itdr_ref"] not in last or d > last[t["itdr_ref"]][0]:
-                last[t["itdr_ref"]] = (d, t["kind"])
+                last[t["itdr_ref"]] = (d, t["kind"], t)
     out = defaultdict(_blank)
     for a in feeds.get("itdr", {}).get("rows") or []:
         if a.get("recovery_tier") not in tiers:
@@ -291,7 +323,11 @@ def _tested(feeds, month, tiers, kinds):
         r["items"].append({"id": a["application_name"], "ref": a["ref"], "tier": a.get("tier_label"),
                            "passed": bool(hit), "tested_on": hit[0] if hit else None,
                            "test_kind": hit[1] if hit else None,
-                           "apps": a.get("apps") or [], "app_owners": a.get("app_owners") or []})
+                           "apps": a.get("apps") or [], "app_owners": a.get("app_owners") or [],
+                           "who": a.get("who") or [], "as_of": _asof(feeds, "dr_tests"),
+                           "detail": _join(hit[2].get("test_type") and f"{hit[2]['test_type']} test", hit[2].get("environment"),
+                                           hit[2].get("comments"), hit[2].get("itdr_lead") and f"ITDR lead {hit[2]['itdr_lead']}")
+                                     if hit else "No successful test in the DR tests file in the 12 months to month-end"})
     return out
 
 

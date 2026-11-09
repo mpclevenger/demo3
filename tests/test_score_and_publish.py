@@ -243,3 +243,17 @@ def test_un01_no_incidents_is_shown_not_scored(tmp_store):
     pay = score_month.run("2026-09")["period"]["families"]["payments"]["metrics"]["UN-01"]
     assert (pay["value"], pay["status"], pay["points"]) == (0.0, "Low confidence", None)
     assert "No Critical or SWE incidents" in pay["reason"]
+
+
+def test_te02_counts_releases_without_a_revert():
+    """Owner, 9 Nov 2026: TE-02 reads the positive way round: 9 of 10 releases without a revert = 90%,
+    higher is better. A revert is still outcome 40/50/60/90; 95 is out; 99 and blank are counted apart."""
+    from trust import config, measure
+    rows = [dict(deployed=True, te02_month="2026-10", family_id="f1", client_impact=False, outcome_unknown=False,
+                 obsoleted=False, overall_outcome="10", revert=False, ticket_id=str(i)) for i in range(9)]
+    rows.append(dict(rows[0], overall_outcome="90", revert=True, ticket_id="R"))
+    r = measure.te02({"tcc": {"rows": rows}}, "2026-10")["f1"]
+    assert (r["numerator"], r["denominator"]) == (9, 10)
+    assert sum(i["no_revert"] for i in r["items"]) == 9
+    m = config.metrics()["TE-02"]
+    assert m["higher_is_better"] is True and m["counting"]["numerator_field"] == "no_revert"

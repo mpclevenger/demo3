@@ -136,6 +136,8 @@ def can(pr, action, family=None):
         return tr or "auditor" in r
     if action == "download":
         return tr or family in pr["lead_of"]
+    if action == "claim":                             # claim a Lost and Found item for a family (owner, 9 Nov 2026)
+        return tr or family in pr["lead_of"]
     if action == "comment":                           # a new explanation, data query or action on a family page
         return tr or family in pr["lead_of"] or family in pr["member_of"]
     if action == "reply":                             # reply to a query or action; leads reply but don't close

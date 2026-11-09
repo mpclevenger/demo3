@@ -66,7 +66,7 @@ Month overview, for reference. Source: [month-flow.mmd](diagrams/month-flow.mmd)
 
 ## Storage
 
-TRUST keeps 13 tables (plus `schema_migration`) in the Postgres add-on, set up by migrations `0001` to `0010` in `migrations/`. The list, with what each holds and what may change, is in [doc 11](../design/11_data_model_v2.md) and in [deployment](deployment.md#the-tables). Without a database (a laptop, tests) the same things are kept in the `store/` folder (`backend/trust/storage.py` chooses). There are no per-source schemas and no database diagrams: the model is small enough to read as a table.
+TRUST keeps 14 tables (plus `schema_migration`) in the Postgres add-on, set up by migrations `0001` to `0011` in `migrations/`. The list, with what each holds and what may change, is in [doc 11](../design/11_data_model_v2.md) and in [deployment](deployment.md#the-tables). Without a database (a laptop, tests) the same things are kept in the `store/` folder (`backend/trust/storage.py` chooses). There are no per-source schemas and no database diagrams: the model is small enough to read as a table.
 
 ## Security in one paragraph
 

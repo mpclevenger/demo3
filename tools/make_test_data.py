@@ -430,6 +430,19 @@ def _tcc(world, month):
                 approval, "", "", "", "", "", outcome, "Yes", "Yes" if ok else "No", "Yes" if ok else "No", "",
                 _us_datetime(created + timedelta(hours=2)), _us_datetime(approval_at) if approval_at else "",
                 _us_datetime(deployed + timedelta(days=1))])
+    # Two changes by an outside contractor who isn't in HR, so they can't be placed with a family: they show on
+    # the Lost and found page (owner, 9 Nov 2026). Fixed values, so the rest of the file doesn't change.
+    for j in (1, 2):
+        tid = base_id + 900 + j
+        created = datetime(y, m, 10 + j, 9, 0)
+        rows.append([
+            tid, f"https://tcc.example.test/{tid}", "Vendor patch for the payment gateway", "Completed", "Standard",
+            "LOW risk", _us_datetime(created), "Sam Vendor", "sam.vendor@partner.example.test", "Sam Vendor", "", "",
+            _us_datetime(created + timedelta(hours=4)), _us_datetime(created + timedelta(hours=6)),
+            (created + timedelta(hours=5)).strftime("%Y-%m-%dT%H:%M:%S.0000000"), "Sam Vendor", "", "10", "",
+            "Approved", "", "", "", "", "", "10", "Yes", "Yes", "Yes", "",
+            _us_datetime(created + timedelta(hours=1)), _us_datetime(created + timedelta(hours=2)),
+            _us_datetime(created + timedelta(days=1))])
     return "tcc_export.csv", _csv(TCC_HEADERS, rows)
 
 
@@ -633,6 +646,7 @@ def _checkmarx(world, month, kind):
 
 def _itdr(world):
     rows = [[a["ref"], a["name"], a["area"], a["tier"]] for f in world["families"] for a in f["apps"]]
+    rows.append([9001, "Shared Print Service", "Shared Services", "Tier 1"])   # an area that is no family: Lost and found
     return "itdr_applications.xlsx", _xlsx(["Ref", "Application Name", "Business Product Area", "Recovery Tier"], rows)
 
 

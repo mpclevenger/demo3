@@ -504,6 +504,71 @@ def approved_contracts():
     return out
 
 
+# ---- Lost and Found claims (owner, 9 Nov 2026): a claim is never edited; its decision changes once or twice ----
+
+CLAIM_FIELDS = ("feed", "item", "label", "family_id", "month", "why", "by")
+# which status a decision may move a claim from
+CLAIM_MOVES = {"approved": ("draft",), "returned": ("draft",), "withdrawn": ("draft",), "released": ("approved",)}
+
+
+def add_claim(c_):
+    if using_database():
+        with connect() as c:
+            row = c.execute(f"""INSERT INTO claim ({", ".join(CLAIM_FIELDS)}) VALUES ({", ".join(["%s"] * len(CLAIM_FIELDS))})
+                                RETURNING id, at""", tuple(c_[k] for k in CLAIM_FIELDS)).fetchone()
+        return {**c_, "id": row[0], "at": row[1].isoformat(), "status": "draft", "decided_by": None,
+                "decided_at": None, "reason": ""}
+    rows = _claim_rows()
+    out = {**c_, "id": len(rows) + 1, "at": _now(), "status": "draft", "decided_by": None, "decided_at": None, "reason": ""}
+    _write_claim_rows(rows + [out])
+    return out
+
+
+def decide_claim(cid, status, by, reason=""):
+    """approved / returned / withdrawn (from draft) or released (from approved). Returns the claim, or None."""
+    allowed = CLAIM_MOVES[status]
+    if using_database():
+        with connect() as c:
+            row = c.execute("""UPDATE claim SET status = %s, decided_by = %s, decided_at = now(), reason = %s
+                               WHERE id = %s AND status = ANY(%s) RETURNING id""",
+                            (status, by, reason, cid, list(allowed))).fetchone()
+        return claim(cid) if row else None
+    rows = _claim_rows()
+    for r in rows:
+        if r["id"] == cid and r["status"] in allowed:
+            r.update(status=status, decided_by=by, decided_at=_now(), reason=reason)
+            _write_claim_rows(rows)
+            return r
+    return None
+
+
+def _claim_rows():
+    if using_database():
+        with connect() as c:
+            rs = c.execute(f"""SELECT id, at, {", ".join(CLAIM_FIELDS)}, status, decided_by, decided_at, reason
+                               FROM claim ORDER BY id""").fetchall()
+        return [{"id": r[0], "at": r[1].isoformat(), **dict(zip(CLAIM_FIELDS, r[2:2 + len(CLAIM_FIELDS)])),
+                 "status": r[-4], "decided_by": r[-3], "decided_at": r[-2].isoformat() if r[-2] else None,
+                 "reason": r[-1]} for r in rs]
+    path = _jsonl("claims.jsonl")
+    return [json.loads(x) for x in path.read_text().splitlines()] if path.exists() else []
+
+
+def _write_claim_rows(rows):
+    path = _jsonl("claims.jsonl")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+def claims():
+    """Every claim, oldest first."""
+    return _claim_rows()
+
+
+def claim(cid):
+    return next((c for c in _claim_rows() if c["id"] == cid), None)
+
+
 def doc_sha256(doc):
     """A fingerprint of a JSON document that doesn't depend on key order or spacing."""
     return hashlib.sha256(json.dumps(doc, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()

@@ -92,14 +92,19 @@ A one-off command runs on the platform, so `upload` there needs the file on the 
 | `/healthz` | `ok` when the app can reach the database (for the platform's health check). |
 | `GET /api/month/<YYYY-MM>` | The newest upload per feed, the month's status, and its recent activity. |
 | `GET /api/comments/<YYYY-MM>` | The month's comments. |
-| `GET /api/items/<YYYY-MM>/<family>.csv` | A family's items for the month as a CSV file (the **Download my data** button on the family page). Cells Excel would run as formulas are quoted. |
+| `GET /api/lost/<YYYY-MM>` | The month's Lost and found items: what no source file could place with a family, with why, which metrics it would count in, and its claim status (owner, 9 Nov 2026). |
+| `POST /api/claims` | Claim a Lost and found item for a family, with a reason. A family lead may claim for their own family, Tech Risk for any. One waiting or approved claim per item. |
+| `POST /api/claims/<id>/decide` | Decide a claim: `approved` or `returned` (Tech Risk; a reason is needed to return), `withdrawn` (the person who claimed, while it waits) or `released` (Tech Risk, for an approved claim; a reason is needed). Every claim and decision is logged. |
+| `GET /api/items/<YYYY-MM>/<family>.xlsx` | A family's items for the month as an Excel file, an About tab then one tab per metric (the **Download my data** panel on the family page; owner, 9 Nov 2026). |
+| `GET /api/items/<YYYY-MM>/<family>/<metric>.csv` | One metric's items as a CSV file (**Download this table** under each metric's data on the family page); `?team=<team key>` for one sub-team. |
+| `GET /api/items/<YYYY-MM>/<family>.csv` | A family's items, all metrics in one CSV (kept for anyone who used it; the page no longer links to it). Cells Excel would run as formulas are quoted in every download. |
 | `/evidence.json` | The items behind every family's numbers, for the drill-down; written by each publish. |
 | `GET /api/update/<month>/<job>` | How a background update is going: `running`, `finished`, `failed` or `stopped`. |
 | `POST /api/upload`, `/api/update`, `/api/acknowledge`, `/api/lock`, `/api/reopen`, `/api/comments` | The changes. Each needs the person's name and the header `X-TRUST: 1`, which the page adds; a browser won't send it from another site without asking first, so another site can't make a change through someone's browser. Uploads are limited to `TRUST_MAX_UPLOAD_MB` (55). |
 
 ## The tables
 
-The v1 data model has thirteen tables (plus `schema_migration`, TRUST's own bookkeeping) ([doc 11](../design/11_data_model_v2.md)), set up by `migrations/0001_kept_files_and_results.sql`, `0002_months_events_comments.sql`, `0003_warning_acknowledgements.sql` `0004_proposals_and_logging.sql`, `0005_log_item_views.sql`, `0006_itdr_applications.sql`, `0007_dr_tests.sql`, `0008_dr_test_kinds.sql`, `0009_data_contracts.sql` and `0010_retention.sql`. Every table and column has a description in the database (`COMMENT ON`).
+The v1 data model has fourteen tables (plus `schema_migration`, TRUST's own bookkeeping) ([doc 11](../design/11_data_model_v2.md)), set up by `migrations/0001_kept_files_and_results.sql`, `0002_months_events_comments.sql`, `0003_warning_acknowledgements.sql` `0004_proposals_and_logging.sql`, `0005_log_item_views.sql`, `0006_itdr_applications.sql`, `0007_dr_tests.sql`, `0008_dr_test_kinds.sql`, `0009_data_contracts.sql`, `0010_retention.sql` and `0011_claims.sql`. Every table and column has a description in the database (`COMMENT ON`).
 
 | Table | What it holds |
 |---|---|
@@ -108,7 +113,7 @@ The v1 data model has thirteen tables (plus `schema_migration`, TRUST's own book
 | `month` | A month's status (open or locked), who locked it and when, and the seal. |
 | `month_result` | Every mapping and scoring run, with who ran it, the git commit and a hash of the settings. The newest is current. |
 | `published_file` | What the website shows: `index.html`, `data.json`, `evidence.json`. |
-| `event_log` | One line per upload (including refused ones), map, score, publish, acknowledgement, lock, reopen, comment, proposal, decision, item view and download, data contract, background update (started, finished, failed) and retention run. |
+| `event_log` | One line per upload (including refused ones), map, score, publish, acknowledgement, lock, reopen, comment, proposal, decision, item view and download, data contract, background update (started, finished, failed), retention run and Lost and found claim or decision. |
 | `comment` | Families' explanations, data queries and actions, and the replies. |
 | `warning_ack` | Who acknowledged each warning from the checks, when, and why. |
 | `proposal` | A suggestion to change a metric's wording, add a metric or retire one, with who and when. Never edited. |
@@ -116,9 +121,10 @@ The v1 data model has thirteen tables (plus `schema_migration`, TRUST's own book
 | `itdr_application` | The ITDR application list: one row per application per upload (Ref, Application Name, Business Product Area, Recovery Tier). The newest upload for a month is the current list. |
 | `dr_test` | Completed DR tests: one row per test per upload (tier, name, business area, ITDR lead, type, date, status, comment and the date read from it). The newest upload for a month is the current list. |
 | `data_contract` | A request to onboard a data source (or a new version of one) and its decision: feed, version, provider, contact, what the file is, cadence, the columns TRUST may read, the metrics it may feed, status (draft, approved = formal, returned, withdrawn), who decided and when. Never edited; the decision columns are filled in once. |
+| `claim` | A claim that a Lost and found item belongs to a family: the file and item reference, the family, why, who and when, and its status (waiting, approved, returned, withdrawn or released) with who decided, when and the reason. Retention never removes claims. |
 | `schema_migration` | Which migration files have run, with the hash of each. |
 
-Nothing in these tables is edited after it is written, except a month's status (by lock and reopen, each logged) and the published page.
+Nothing in these tables is edited after it is written, except a month's status (by lock and reopen, each logged), the published page, and the decision columns of a claim (each decision is logged).
 
 ## Database logins
 

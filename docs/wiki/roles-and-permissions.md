@@ -31,17 +31,20 @@ Y = yes · own = their own family only · N = no
 | A family's page | Y | Y | Y | own | own | Y |
 | Other families' pages | Y | Y | Y | N (the firm's typical value only) | N | Y |
 | Item detail ("What's driving it"), with people's names | Y | Y | Y | own | own | Y |
-| Download a family's items (CSV; every download is logged with the name typed on the page) | N | Y | Y | own | N | **N** |
+| Download a family's items (one metric's table as CSV, or every metric as Excel with one tab each; every download is logged with the name typed on the page) | N | Y | Y | own | N | **N** |
 | Metric dictionary and Method pages | Y | Y | Y | Y | Y | Y |
 | Data dictionary (every file TRUST reads, its checks and its data contract) | Y | Y | Y | Y | Y | Y |
 | Data sources, This month, Validation checks | N | Y | Y | N | N | Y (read only) |
 | Activity log and lock record | N | Y | Y | N | N | Y |
+| Lost and found (items no file could place with a family, under Governance) | Y | Y | Y | Y | Y | Y |
 | **Doing** | | | | | | |
 | Explain a score, raise a data query or action (family pages only) | N | Y (marked from Tech Risk) | Y | own | own | N |
 | Comment on the CTO view or Firm position | N | N | N | N | N | N |
 | Reply to and close queries and actions | N | Y | Y | own (reply only) | N | N |
 | Upload files, acknowledge warnings | N | Y | Y | N | N | N |
 | Update the scorecard | N | Y | Y | N | N | N |
+| Claim a Lost and found item for a family, with a reason (Tech Risk: any family; a family lead: their own family). The person who claimed can withdraw it while it waits | N | Y | Y | own | N | N |
+| Approve or return a claim (a reason is needed to return), and release an approved claim (a reason is needed; this is the undo) | N | Y | Y | N | N | N |
 | Lock a month | N | Y | Y | N | N | N |
 | Reopen a month (with a reason) | N | Y | Y | N | N | N |
 | Approve a family delegate | N | N | Y | N | N | N |
@@ -53,7 +56,7 @@ Y = yes · own = their own family only · N = no
 
 Database access (the Postgres add-on's login) is separate from all of these: platform administrators only, and every use logged by the platform.
 
-**Sub-teams.** Family pages and the drill-down group a family's people into sub-teams. Which HR column names the sub-teams is a setting, `subteam_hr_column` in `config/settings.json` (owner, 3 Nov 2026: configurable; Department for now, Supervisory Organization also works). Item detail shows each item's person by name.
+**Sub-teams.** Family pages and the drill-down group a family's people into sub-teams. Which HR column names the sub-teams is a setting, `subteam_hr_column` in `config/settings.json` (owner, 3 Nov 2026: configurable; Department for now, Supervisory Organization also works). Item detail shows each item's person by name, with their SAM account, work email, and their L4 and L3 managers (name and email) from the HR manager chain (owner, 9 Nov 2026), so it is confidential to the family and Tech Risk; downloads say so on their first line.
 
 ## What TRUST needs from the access add-on
 

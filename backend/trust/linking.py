@@ -250,3 +250,43 @@ def families_from_level(people, level=3):
         counts[f] = counts.get(f, 0) + 1
     families = [{**f, "people": counts.get(f["family_id"], 0)} for f in rows]
     return dict(family_of_sam=family_of_sam, family_of_email=family_of_email, families=families, notes=notes)
+
+
+def who_table(people, l3=3):
+    """{sam: who} for every kept person, for the drill-down (owner, 9 Nov 2026): name, SAM_ACCOUNT (their ID),
+    work email, team, and the L4 and L3 managers on their HR manager chain (the people at reporting levels
+    l3 + 1 and l3 from the top; a person at that level is their own). Above a level, that manager is blank."""
+    by_sam = {p["sam_account"]: p for p in people}
+    out = {}
+    for sam, p in by_sam.items():
+        found, cur, seen = {}, sam, set()
+        while cur in by_sam and cur not in seen:
+            seen.add(cur)
+            lvl = by_sam[cur].get("reporting_level")
+            if lvl in (l3, l3 + 1):
+                found.setdefault(lvl, by_sam[cur])
+            cur = by_sam[cur].get("manager_sam")
+        l4, l3p = found.get(l3 + 1) or {}, found.get(l3) or {}
+        out[sam] = {"name": p.get("worker") or sam, "sam": sam, "email": p.get("email") or "",
+                    "l4": l4.get("worker") or "", "l4_email": l4.get("email") or "",
+                    "l3": l3p.get("worker") or "", "l3_email": l3p.get("email") or ""}
+    return out
+
+
+def who_of(table, sams=(), emails=(), sam_of_email=None):
+    """The people behind one item, each once, in order: by SAM_ACCOUNT, or by work email through HR. A SAM not
+    in HR still shows, as its SAM alone, so nobody silently disappears from the drill-down."""
+    sam_of_email = sam_of_email or {}
+    keys = [s.lower() for s in sams if s] + [sam_of_email.get((e or "").lower()) or ("@" + e.lower()) for e in emails if e]
+    out, seen = [], set()
+    for k in keys:
+        if k in seen:
+            continue
+        seen.add(k)
+        if k in table:
+            out.append(table[k])
+        elif k.startswith("@"):
+            out.append({"name": "", "sam": "", "email": k[1:], "l4": "", "l4_email": "", "l3": "", "l3_email": ""})
+        else:
+            out.append({"name": "", "sam": k, "email": "", "l4": "", "l4_email": "", "l3": "", "l3_email": ""})
+    return out

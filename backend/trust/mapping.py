@@ -7,9 +7,10 @@ that can't be read, a missing column or an unplaced row all become plain notes.
 
 Output: store/mapped/<YYYY-MM>.json, which step 3 (scoring) reads.
 """
+from collections import defaultdict
 import json
 
-from . import config, linking, storage, store
+from . import config, linking, lost, storage, store
 from .intake import (actions, app_inventory, app_links, checkmarx, defects, dr_tests, families, hr, itdr, ntcc,
                      owner_groups, postmortems, repos, tcc)
 
@@ -229,7 +230,40 @@ def map_month(month, by="command line"):
         for x in feeds.get(feed, {}).get("rows") or []:
             x["person"], x["team"], x["team_key"] = who.get(x.get(key), (None, None, None))
 
+    # Lost and Found (owner, 9 Nov 2026): approved claims place items no source file placed. A claim never
+    # overrides a file, and carries over to every month mapped after it is approved.
+    claims_used, claim_note = lost.apply_claims(feeds, storage.claims())
+    if claim_note:
+        notes.append(claim_note)
+
+    # Who each item belongs to, for the drill-down (owner, 9 Nov 2026): the person's name, SAM_ACCOUNT and work
+    # email, with their L4 and L3 managers from the HR manager chain. Changes: the author. Actions: the assignee.
+    # Repos: the repo owner. Checkmarx: the matched GitHub repo's owner, else the app owners. ITDR applications:
+    # the app owners. Incidents: the assignees of the incident's actions in each family.
+    whos = linking.who_table(people, linking.l3_level(s))
+    of = lambda sams=(), emails=(): linking.who_of(whos, sams, emails, email_to_sam)
+    for feed, key in (("tcc", "author_email"), ("ntcc", "author_email"), ("actions", "assignee_email"),
+                      ("repos", "owner_email")):
+        for x in feeds.get(feed, {}).get("rows") or []:
+            x["who"] = of(emails=[x.get(key)])
+    repo_owner = {r["repo"]: r.get("owner_email") for r in feeds.get("repos", {}).get("rows") or []}
+    for cx in ("cx_sast", "cx_sca"):
+        for x in feeds.get(cx, {}).get("rows") or []:
+            x["who"] = of(emails=[repo_owner.get(x.get("gh_repo"))]) if repo_owner.get(x.get("gh_repo")) \
+                else of(sams=x.get("app_owner_sams") or [])
+    for x in feeds.get("itdr", {}).get("rows") or []:
+        x["who"] = of(sams=x.get("app_owner_sams") or [])
+    incs = (feeds.get("postmortems") or {}).get("incidents")
+    if incs:
+        by_inc = defaultdict(list)
+        for a in feeds.get("actions", {}).get("rows") or []:
+            if a.get("incident_id") and a.get("assignee_email"):
+                by_inc[(a["incident_id"], a.get("family_id"))].append(a["assignee_email"])
+        for inc, v in incs.items():
+            v["who_by_family"] = {f: of(emails=by_inc.get((inc, f), [])) for f in v.get("families") or []}
+
     out = {"month": month, "settings_used": s, "team_grouping": team_grouping, "feeds": feeds, "notes": notes,
+           "claims_used": claims_used,
            "received": sorted(f for f, v in feeds.items() if v["status"] != "not received")}
     storage.save_month("mapped", month, out, by)
     storage.log("map", by, month, f"{len(out['received'])} files read")

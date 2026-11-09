@@ -114,3 +114,21 @@ def test_l3_works_with_no_owners_file(store_with):
     m = mapping.map_month("2026-10")
     assert {t["family"] for t in m["feeds"]["hr_mapping"]["families"]} >= {"Alex Moreno"}
     assert not any("owners file not loaded" in n for n in m["notes"])
+
+
+
+def test_l4_and_l3_managers_come_from_the_hr_manager_chain():
+    """Owner, 9 Nov 2026: the drill-down shows each person's L4 and L3 managers, found up their HR manager chain
+    (reporting levels 4 and 3 from the top). A person at that level is their own; above it, blank."""
+    from trust import linking
+    ppl = [dict(sam_account="cto", worker="C T O", email="cto@x", manager_sam=None, reporting_level=1),
+           dict(sam_account="l2", worker="Two", email="l2@x", manager_sam="cto", reporting_level=2),
+           dict(sam_account="l3", worker="Three", email="l3@x", manager_sam="l2", reporting_level=3),
+           dict(sam_account="l4", worker="Four", email="l4@x", manager_sam="l3", reporting_level=4),
+           dict(sam_account="dev", worker="Dev", email="dev@x", manager_sam="l4", reporting_level=5)]
+    t = linking.who_table(ppl, 3)
+    assert (t["dev"]["l4"], t["dev"]["l4_email"], t["dev"]["l3"]) == ("Four", "l4@x", "Three")
+    assert (t["l4"]["l4"], t["l4"]["l3"]) == ("Four", "Three")
+    assert (t["l3"]["l4"], t["l3"]["l3"]) == ("", "Three")
+    who = linking.who_of(t, emails=["DEV@x", "nobody@x"], sam_of_email={"dev@x": "dev"})
+    assert [w["name"] for w in who] == ["Dev", ""] and who[1]["email"] == "nobody@x"

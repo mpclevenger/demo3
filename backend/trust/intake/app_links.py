@@ -234,6 +234,7 @@ def link(apps, people, ad_rows=None, itdr_rows=None, gh_rows=None, cx_feeds=(), 
             linked = itdr_links.get(r["ref"], [])
             r["apps"] = [label(a) for a in linked]
             r["app_owners"] = sorted({o["name"] or o["sam"] for a in linked for o in a["owners"]})
+            r["app_owner_sams"] = sorted({o["sam"] for a in linked for o in a["owners"] if o.get("sam")})   # who, for the drill-down
         if (settings or {}).get("itdr_family_from_inventory", True) is not False:
             itdr_notes += _place_itdr(itdr_rows, itdr_links)
         n = len(live)
@@ -278,11 +279,13 @@ def link(apps, people, ad_rows=None, itdr_rows=None, gh_rows=None, cx_feeds=(), 
             linked = list(apps_of_repo.get(g["repo"], {}).values())
             g["apps"] = [label(a) for a in linked]
             g["app_owners"] = sorted({o["name"] or o["sam"] for a in linked for o in a["owners"]})
+            g["app_owner_sams"] = sorted({o["sam"] for a in linked for o in a["owners"] if o.get("sam")})   # who, for the drill-down
         for rows_cx in cx_feeds:
             for x in rows_cx or []:
                 linked = list(apps_of_repo.get(x.get("gh_repo"), {}).values())
                 x["apps"] = [label(a) for a in linked]
                 x["app_owners"] = sorted({o["name"] or o["sam"] for a in linked for o in a["owners"]})
+                x["app_owner_sams"] = sorted({o["sam"] for a in linked for o in a["owners"] if o.get("sam")})   # who, for the drill-down
     else:
         notes.append("For information: GitHub repo file not loaded this month: service repos aren't linked to repos yet.")
 

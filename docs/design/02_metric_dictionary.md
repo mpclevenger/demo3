@@ -41,7 +41,7 @@
 | ID | Metric | Better when | Result | Threshold basis | Population (in short) | Month |
 |---|---|---|---|---|---|---|
 | TE-01 | Change ticket adoption | Higher | % of deployed production changes that went through TCC | Prevailing median | Deployed TCC and Non-TCC changes | Month the ticket was created |
-| TE-02 | Release revert rate (7 days) | Lower | % of production releases backed out | Prevailing median | Deployed TCC releases with a known outcome | Month the 7-day window ends |
+| TE-02 | Releases without a revert (7 days) | Higher | % of production releases not backed out | Prevailing median | Deployed TCC releases with a known outcome | Month the 7-day window ends |
 | UN-01 | Critical and SWE incidents | Lower | Count of unique incidents (until the app inventory gives "per 10 apps") | Prevailing median, band at least 1 incident | Postmortem file, DEFCON 1–5 | Month the incident ended |
 | UN-02 | Postmortem actions overdue rate | Lower | % of open actions past their due date | Prevailing median | Actions open at month-end | Snapshot at month-end |
 | SE-01 | Checkmarx SAST pass rate | Higher | % of scanned repos passing Cyber's SAST policy | Prevailing median | Repos in the month's SAST export | The month's export |
@@ -75,9 +75,10 @@ UN-03 (client incidents) is **Coming soon**: there is no source for client incid
 | A change could appear in both exports. | Counted once, as TCC, and listed. | Mitigated |
 | Many deployments can be linked to one general ticket. | None yet. | No mitigation yet |
 
-#### TE-02 Release revert rate (7 days)
+#### TE-02 Releases without a revert (7 days)
+- **Changed 9 Nov 2026 (owner):** shown the positive way round (was the revert rate, lower is better). 9 of 10 releases without a revert = 90%.
 - **Risk it watches:** releases that have to be backed out point to weak pre-production testing, and bad releases that reach production can affect clients.
-- **Value:** releases reverted ÷ releases with a known outcome × 100.
+- **Value:** releases not reverted ÷ releases with a known outcome × 100.
 - **Population:** production releases through TCC whose 7-day revert window ended in the month. Reverted means the overall outcome is 40, 50, 60 or 90 (backed out, including a backout started by the client).
 - **Exclusions:** outcome 95 (obsoleted). Outcome 99 (unknown) and a blank outcome are left out of the rate and counted separately.
 - **Time basis:** the month the 7-day window ends (last deployment + 7 days): a release on 28 September counts in October.
@@ -210,7 +211,7 @@ Status: **Measured** (scored today), **Coming soon** (no source yet) or **Planne
 | SE-05 | SailPoint governance | IAM (Cyber) | More governed | Apps (count) | Planned | Pass/fail (1.13) |
 | SE-06 | EOL components (platform-hosted) | Hosting platform | Lower | % of platform-hosted apps | Planned | Not set; override: Tier 0/1 internet-facing app with EOL = Red |
 | TE-01 | Change ticket adoption | Change | Higher | % of deployed changes through TCC | **Measured** | Prevailing median |
-| TE-02 | Release revert rate (7 days) | Change | Lower | % of production releases | **Measured** | Prevailing median |
+| TE-02 | Releases without a revert (7 days) | Change | Higher | % of production releases | **Measured** | Prevailing median |
 | TE-03 | Defect rate | Change | Lower | Defects per 100 releases | Planned | Not set |
 | TE-04 | AI-assisted commits rate | Change (GHES data) | n/a | % of commits | Planned | Information only, no threshold |
 
@@ -410,7 +411,7 @@ The CSF categories refer to NIST CSF 2.0 (Feb 2024). Scorecard metrics are not S
 | SE-05 | SailPoint governance | PR.AA (PR.AA-01, PR.AA-05) | IAM / identity governance standard | Y — APD |
 | SE-06 | EOL components | PR.PS (PR.PS-02); ID.AM (ID.AM-08), ID.RA (ID.RA-01) | Technology lifecycle / EOL standard | N — supporting CO |
 | TE-01 | Change ticket adoption | ID.RA (ID.RA-07); PR.PS (PR.PS-01) | Change management standard | Y — PC (core: authorised changes) |
-| TE-02 | Release revert rate | ID.RA (ID.RA-07); PR.PS (PR.PS-06); ID.IM (ID.IM-03) | Change mgmt / release standard | N — quality indicator (supporting PC) |
+| TE-02 | Releases without a revert | ID.RA (ID.RA-07); PR.PS (PR.PS-06); ID.IM (ID.IM-03) | Change mgmt / release standard | N — quality indicator (supporting PC) |
 | TE-03 | Defect rate | PR.PS (PR.PS-06); ID.IM (ID.IM-03) | SDLC / testing standard | N — quality indicator (supporting SDLC) |
 | TE-04 | AI-assisted commits (info) | PR.PS (PR.PS-06); GV.PO | AI acceptable use / secure coding standard | N |
 

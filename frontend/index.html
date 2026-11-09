@@ -305,6 +305,9 @@ button.sm{padding:0 9px;font-size:12px}
 /* ===== legibility pass: tokens and overrides ===== */
 .cap,.legend,.foot12,.rule,.dt th,.flag,.lm,.pchip,.hm th span,.lim,.ticks,.xcard figcaption,.hm td .s,.wfam,.fsay,.ddt2 th,.ddt2 td{line-height:1.4}
 .cap,.foot12{max-width:100ch}
+.lftools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px;margin:6px 0 4px}.lfl{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}.lfl select{max-width:220px}.lfq input{width:300px;font:inherit;font-size:14px;padding:4px 8px;border:1px solid var(--border);border-radius:6px}.lfsum{margin:10px 0 4px;font-size:15px}.lft td{vertical-align:top;overflow-wrap:anywhere}.lft .tag{white-space:normal;display:inline-block;margin:0 0 3px;max-width:100%}.chip.ok{background:#d1f0dc;color:#0f5132}.chip.wait{background:#fde8b0;color:#664d03}.lff textarea{width:100%;max-width:640px}.okmsg{border-left:4px solid #15803d;background:#ecfdf3;padding:6px 12px;margin:8px 0}
+.itb{margin-top:4px}.itbh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin:0 0 4px}.tbf{display:inline-flex;gap:4px}.tbf button[aria-pressed=true]{background:#1f2937;color:#fff;border-color:#1f2937}.itt td{vertical-align:top}.itt tr.att td{background:#fdf1f1}.itt tr.att td:first-child{box-shadow:inset 3px 0 0 #b91c1c}.natt{font-weight:700;color:#b91c1c}.itt{font-size:13px}.itt td,.itt th{padding:5px 6px}.itt .wh{white-space:nowrap}.itt .wh+.wh{margin-top:4px}.itt .wh>*{display:block}.itt .wh b{color:var(--text);font-weight:600;font-size:13px}.itt .wh span:not(.cap){color:var(--text);font-size:13px;font-weight:400}.itt .wh .cap{font-size:11.5px}.itt td.dtl{min-width:150px;max-width:220px}.itt .nw{white-space:nowrap}.itbf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:6px}.itbf .noprint{display:inline-flex;align-items:center;gap:8px;margin-left:auto}.itbf a.btnlink{font-size:12px;padding:1px 9px;font-weight:400;border-color:var(--border);color:var(--link,#0a4db3)}
+.grp>p.cap,.ftwrap~p.cap,.dt~p.cap,.ddscroll~p.cap{max-width:none}   /* notes under a table run its full width (owner, 9 Nov 2026) */
 .hm td.c:not(.tr) .s{display:inline;margin-left:6px}.hm td.tr .s{display:block;margin-left:0}
 .hm td.r .s,.hm td.a .s{color:#4a535d}
 /* family header: scoreboard strip */
@@ -1218,7 +1221,7 @@ const basisName = t => (t.basis === 'Policy' && t.set_from ? 'Fixed (from median
 const NEED_LETTERS = () => { let c = {}; try { c = (D.periods[S.p] || {}).coverage || {}; } catch (e) {} return c.trust_min_blocks || 3; };   // building blocks a TRUST score needs (setting "coverage"; default 3)
 const NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven'];
 const CAP = () => { let pc = {}; try { pc = (D.periods[S.p] || {}).caps || {}; } catch (e) {} return Object.assign({automatic_red_block:49, red_metric_block:79, red_block_trust:79}, D.caps || {}, pc); };
-const RULE_TEXT = {'TE-02':{phrase:'Release with client impact', of:'of releases reverted'}, 'SE-03':{phrase:'Critical secret overdue', of:'of open secrets past SLA'}, 'SE-06':{phrase:'End-of-life component on a Tier 0/1 internet-facing app', of:'of hosted apps affected'}};
+const RULE_TEXT = {'TE-02':{phrase:'Release with client impact', of:'of releases without a revert'}, 'SE-03':{phrase:'Critical secret overdue', of:'of open secrets past SLA'}, 'SE-06':{phrase:'End-of-life component on a Tier 0/1 internet-facing app', of:'of hosted apps affected'}};
 const RULE = {client_impact:'a release with client impact', critical_secret:'an overdue critical secret', t01_internet_eol:'an end-of-life component on a Tier 0/1 internet-facing app'};
 const SCORED = ['Green','Amber','Red'];
 const RANK = {Green:0, Amber:1, Red:2};
@@ -1689,7 +1692,6 @@ function vFirm(){
 /* ---------- family drill-down (item-level evidence, loaded lazily) ---------- */
 const EV = {state:'idle', data:null};
 const DDS = {l1:new Set(), l2:new Set(), tf:{}, focus:null};
-const srcHref = () => '';        // links into each source system come with direct feeds (v2)
 const EXR = {archived:'archived', not_in_scope:'not in scope', duplicate:'duplicate', not_tier01:'not Tier 0/1', other_documented:'other documented reason', closed_before_as_of:'closed before month end', not_eligible:'not eligible', approved_exception:'approved exception'};
 function secSave(){ DDS.secs = [...document.querySelectorAll('details.lsec')].map(d => d.open); }
 function secRestore(){ if (DDS.secs) document.querySelectorAll('details.lsec').forEach((d, i) => { if (DDS.secs[i]) d.open = true; }); }
@@ -1707,25 +1709,12 @@ function evLoad(){
 function ddBars(rows){
   return rows.length ? `<ul class="bl">${rows.map(r => `<li><span class="bn">${r[0]}</span><span class="bt" aria-hidden="true"><i style="width:${Math.round(r[2] * 100)}%"></i></span><span class="bv">${r[1]}</span></li>`).join('')}</ul>` : '<p class="muted" style="margin:0">None.</p>';
 }
-function ddItems(e, k){
+function ddItems(fid, e, k){
+  if (!canSeeItems()) return `<p class="cap ddn" style="margin:8px 0 0">Item-level detail is for Tech Risk and the family’s own people.</p>`;
   const open = DDS.l2.has(k), id = `ddi-${k.replace('|', '-')}`;
-  if (!isTR() && !((roleFam()))) return `<p class="cap ddn" style="margin:8px 0 0">Item-level detail is restricted: available to Tech Risk and named auditors; family access pending the Restricted classification sign-off.</p>`;
-  const btn = `<span class="noprint"><button type="button" class="sm" data-act="dd-items" data-dd="i:${k}" aria-expanded="${open}" aria-controls="${id}">${open ? 'Hide items' : 'Show items'}</button></span>`;
+  const btn = `<span class="noprint"><button type="button" class="sm" data-act="dd-items" data-dd="i:${k}" aria-expanded="${open}" aria-controls="${id}">${open ? 'Hide the data' : 'See the data'}</button></span>`;
   if (!open) return `<div style="margin-top:8px">${btn}</div>`;
-  const mid = k.split('|')[1], tf = DDS.tf[k], list = tf ? e.items.filter(i => i.team_key === tf) : e.items;
-  const dash = '—', rows = list.map(i => {
-    const app = i.app_id ? esc(i.app_id) : i.item_type === 'app' ? esc(i.item_id) : 'Not mapped to an app';
-    const at = i.attributes ? Object.entries(i.attributes).map(([a, v]) => (HYG[a] ? `${HYG[a]}: ${v === true ? 'yes' : v === false ? 'no' : esc(v)}` : `${esc(a.replace(/_/g, ' '))} ${esc(v === true ? 'yes' : v === false ? 'no' : v)}`)).join(' · ') : '';
-    const counted = i.in_denominator === false ? 'No' + (i.exclusion_reason ? ' — ' + esc(EXR[i.exclusion_reason] || i.exclusion_reason.replace(/_/g, ' ')) : '') : 'Yes';
-    return `<tr><td><b>${esc(i.item_id)}</b>${at ? `<div class="cap">${at}</div>` : ''}</td><td>${app}</td><td>${esc(i.item_type)}</td><td>${i.severity ? esc(i.severity) : dash}</td><td>${i.opened_at ? fd(i.opened_at) : dash}</td><td>${i.due_at ? fd(i.due_at) : dash}</td>
-      <td>${i.days_overdue != null ? i.days_overdue : i.due_at ? 0 : dash}</td><td>${i.status_at_as_of ? esc(i.status_at_as_of) : dash}</td><td>${i.exception_ref ? esc(i.exception_ref) + (i.exception_expires_on ? ', expires ' + fd(i.exception_expires_on) : '') : dash}</td><td>${counted}</td><td>${i.override_flag ? '<span class="aw">Automatic Red rule</span>' : ''}</td><td><button type="button" class="lnkbtn" disabled data-href="${esc(srcHref(mid, i.item_id))}" aria-describedby="${id}-src">Open in source</button></td></tr>`; }).join('');
-  const who = tf ? ` from ${esc(subLabel(tf))}` : '';
-  const shown = tf ? `Showing ${list.length} of the ${e.items.length} listed ${e.items.length === 1 ? 'item' : 'items'}${who}, worst first.` : e.n_items > e.items.length ? `Showing the first ${e.items.length} of ${e.n_items} highest-priority items, worst first.` : `Showing ${e.items.length} ${e.items.length === 1 ? 'item' : 'items'}, worst first.`;
-  return `<div style="margin-top:8px">${btn}</div><div class="ddl2" id="${id}"><p class="cap" style="margin:6px 0 4px">${shown}</p>
-    <div class="ddscroll"><table class="dt ddt2"><thead><tr><th>Item</th><th>App</th><th>Type</th><th>Severity</th><th>Opened</th><th>Due</th><th>Days overdue</th><th>Status</th><th>Exception</th><th>Counted?</th><th>Rule</th><th>Source</th></tr></thead><tbody>${rows || '<tr><td colspan="12" class="muted">No items.</td></tr>'}</tbody></table></div>
-    <p class="cap" id="${id}-src" style="margin:4px 0 0">Opens the record in the provider's own tool (e.g. the SAST scanner) using your own access. TRUST holds only the ${('item row')}; the source shows today's state, while this list is the month-end snapshot that was scored.</p>
-    
-    </div>`;
+  return `<div style="margin-top:8px">${btn}</div><div class="ddl2" id="${id}" style="margin-top:6px">${itemTable(fid, k.split('|')[1], e, DDS.tf[k])}</div>`;
 }
 function ddPanel(fid, mid, where){
   const k = where + '|' + mid; if (S.snap || !DDS.l1.has(k)) return '';
@@ -1748,7 +1737,7 @@ function ddPanel(fid, mid, where){
   const un = e.unattributed_den > 0 || e.unattributed_num > 0 ? `<p class="muted cap" style="margin:6px 0 0">Items not yet mapped to a family for this provider, firmwide: ${nfmt(e.unattributed_num)} of ${nfmt(e.unattributed_den)}</p>` : '';
   const tfk = DDS.tf[k], hd = where === 'l' ? `<div class="ddhd noprint"><span class="cap">${tfk ? 'Filtered to ' + esc(subLabel(tfk)) : 'All sub-teams'}</span><span>${tfk ? `<button type="button" class="sm" data-act="dd-clear" data-dd="c:${k}">Clear filter</button> ` : ''}<button type="button" class="sm" data-act="dd-close" data-dd="x:${k}">Close</button></span></div>` : '';
   const ck = e.checks ? hygBlock(e, Dn) : '';
-  return wrap(`${hd}<p class="ddtrace"><b>${calc}</b>${exTxt}</p>${ck}<div class="ddg"><div><h4 class="dh4" style="margin:0 0 4px">By team</h4>${ddBars(teams)}</div><div><h4 class="dh4" style="margin:0 0 4px">By app / repo</h4>${ddBars(apps)}</div></div>${un}<div class="noprint" style="margin-top:8px"><button type="button" class="sm" data-act="dict-open" data-id="${mid}">See the metric definition</button></div>${ddItems(e, k)}`);
+  return wrap(`${hd}<p class="ddtrace"><b>${calc}</b>${exTxt}</p>${ck}<div class="ddg"><div><h4 class="dh4" style="margin:0 0 4px">By team</h4>${ddBars(teams)}</div><div><h4 class="dh4" style="margin:0 0 4px">By app / repo</h4>${ddBars(apps)}</div></div>${un}<div class="noprint" style="margin-top:8px"><button type="button" class="sm" data-act="dict-open" data-id="${mid}">See the metric definition</button></div>${ddItems(fid, e, k)}`);
 }
 function hygBlock(e, Dn){              // D-51: which TR-02 checks repos fail (a repo can fail more than one)
   const F = e.checks_any_fail || 0, rp = n => n === 1 ? 'repo' : 'repos';
@@ -1779,14 +1768,11 @@ function famCards(fid){
 
 /* ---------- family page: "Download my data" panel ---------- */
 const DL = {open:false, tab:'scores', msg:''};
-const DL_ITEMS_ALL = true;            // live data (owner, 3 Nov 2026): families see their own items; access is set up before go-live (wiki: roles and permissions)
 const DLT = {
   scores:{label:'Scores', cols:[['Metric ID','Short code of the metric'], ['Name','Plain-language name of the metric'], ['Value','This month’s result for the family; the two pass/fail metrics show a count such as “21 of 23 apps governed”'], ['Numerator','Items counted in the top of the fraction'], ['Denominator','Items in scope: the bottom of the fraction'],
     ['Status','Green, Amber or Red against the thresholds; Information only or Not scored where none applies'], ['Green tolerance','The value at which a metric is Green; blank for pass/fail metrics'], ['Red limit','The value past which a metric is Red; blank for pass/fail metrics'], ['Basis','How the threshold was set: Policy, Prevailing median or Placeholder; “Pass/fail (not calibrated)” for the two pass/fail metrics'],
     ['Threshold version','Version of the thresholds this month was scored with'], ['Flags','Automatic Red rule, chronic, new this month, risk accepted, behind peers or provisional'], ['Prior-month value','Last month’s result, for comparison']]},
   breakdown:{label:'Breakdown', cols:[['Metric ID','Short code of the metric'], ['Cut','Whether the row groups items by sub-team or by app'], ['Group','The sub-team (with manager) or the app ID; “Other” is the apps outside the top eight'], ['Numerator','Items counted in the top of the fraction for this group'], ['Denominator','Items in scope for this group; blank for rate metrics measured per app']]},
-  items:{label:'Items', cols:[['Metric ID','Short code of the metric'], ['Item ID','Pseudonymised item identifier; contains no names or hostnames'], ['App','The app the item belongs to'], ['Sub-team','The sub-team that owns the item'], ['Type','Kind of item: repo, app, incident, finding and so on'], ['Severity','Severity where the item has one'],
-    ['Opened','Date the item was opened'], ['Due','Date the item is due'], ['Days overdue','Days past the due date at month end'], ['Status','Item status at month end'], ['Exception ref','Reference of an approved exception, if any'], ['Expires','Date the exception expires'], ['Counted?','Whether the item is in the calculation'], ['Exclusion reason','Why an item is left out of the calculation'], ['Automatic rule','Whether the item triggers an Automatic Red rule']]},
   expl:{label:'Explanations & actions', cols:[['Kind','Explanation, action, data query, accepted risk or family note'], ['Ref','Reference number of the entry'], ['Metric ID','Metric the entry is about; blank for the whole family'], ['Text','What was written'], ['Owner','Who owns it'], ['Status','Open, done or approved'], ['Due','Date it is due'], ['Date','Date it was created']]},
   dict:{label:'Dictionary', cols:[['Tab','The tab the column belongs to'], ['Column','The column name'], ['Meaning','What the column means in plain language']]}
 };
@@ -1803,7 +1789,7 @@ function flagTexts(fid, id, x){
 }
 function dlData(fid, tab){                 // -> {head, rows, note}
   const p = P(), fr = p.families[fid].metrics, head = DLT[tab].cols.map(c => c[0]);
-  const needEv = tab === 'breakdown' || tab === 'items';
+  const needEv = tab === 'breakdown';
   if (needEv && (EV.state === 'idle' || EV.state === 'loading')) return {head, rows:[], note:'Loading…'};
   if (needEv && !famEv(fid)) return {head, rows:[], note:('Item detail couldn’t be loaded. Reload the page to try again.')};
   let rows = [];
@@ -1813,11 +1799,6 @@ function dlData(fid, tab){                 // -> {head, rows, note}
   else if (tab === 'breakdown') Object.entries(famEv(fid)).forEach(([mid, e]) => {
     e.by_team.forEach(t => rows.push([mid, 'Sub-team', subLabel(t.team_key, t.team_name), t.num, t.den == null ? '' : t.den]));
     e.by_app.forEach(a => rows.push([mid, 'App', a.app_id === 'NO-APP' ? 'Not mapped to an app' : a.app_id === 'Other' ? `Other (${a.n_apps} apps)` : a.app_id, a.num, a.den == null ? '' : a.den])); });
-  else if (tab === 'items') {
-    if (!isTR() && !DL_ITEMS_ALL) return {head, rows:[], note:'Item-level detail is restricted: available to Tech Risk and named auditors; family access pending the Restricted classification sign-off. The Items tab is left out of the file for your role.'};
-    Object.entries(famEv(fid)).forEach(([mid, e]) => e.items.forEach(i => rows.push([mid, i.item_id, i.app_id || (i.item_type === 'app' ? i.item_id : 'Not mapped to an app'), i.team_key ? subLabel(i.team_key) : '', i.item_type, i.severity || '', i.opened_at || '', i.due_at || '',
-      i.days_overdue != null ? i.days_overdue : '', i.status_at_as_of || '', i.exception_ref || '', i.exception_expires_on || '', i.in_denominator === false ? 'No' : 'Yes', i.exclusion_reason ? (EXR[i.exclusion_reason] || i.exclusion_reason.replace(/_/g, ' ')) : '', i.override_flag ? 'Yes' : 'No'])));
-  }
   else if (tab === 'expl') {
     D.entries.filter(e => e.family_id === fid && e.period <= S.p).forEach(e => rows.push([e.kind === 'Note' ? 'Family note' : e.kind, e.id, e.metric_id || '', e.text, e.owner, e.status, e.due || '', e.created || '']));
     COMMENTS.filter(c => c.p === S.p && c.fid === fid).forEach(c => rows.push([{explain:'Explanation', query:'Data query', action:'Action requested'}[c.type] || 'Explanation', '', c.mid || '', c.text, fam(fid).leads[0], 'Submitted', '', c.date || '']));
@@ -1835,10 +1816,10 @@ function dlPanel(fid){
   const cur = DLT[DL.tab] ? DL.tab : 'scores', d = dlData(fid, cur), more = d.rows.length - 15;
   const today = new Date().toISOString().slice(0, 10);
   return `<section class="dlp noprint" id="dlp" role="region" aria-labelledby="dlp-h"><div class="dlh"><h2 id="dlp-h">Download the data behind this scorecard</h2><button type="button" class="sm" data-act="dl-close" data-dl="close">Close</button></div>
-    <p class="cap" style="margin:0 0 8px">${(`A preview of the data, tab by tab. <b>Download the items</b> gives every item behind ${esc(f.name)}'s numbers for ${esc(monthLabel(S.p))}, one row each, with the person, team, dates and what each one shows.`)}</p>
+    <p class="cap" style="margin:0 0 8px">${(`A preview of the scores, tab by tab. <b>Download every item</b> gives an Excel file with one tab per metric: every item behind ${esc(f.name)}'s numbers for ${esc(monthLabel(S.p))}, with its key details, the ones that need attention first. Each metric's table on this page also has its own download.`)}</p>
     <div role="tablist" aria-label="Workbook tabs" class="dltabs">${tabs.map(t => `<button type="button" role="tab" class="dltab" id="dlt-${t}" data-act="dl-tab" data-tab="${t}" data-dl="tab-${t}" aria-selected="${t === cur}" aria-controls="dlbody" tabindex="${t === cur ? 0 : -1}">${DLT[t].label}${counts[t] ? ` <span class="cap">${counts[t]}</span>` : ''}</button>`).join('')}</div>
     <div id="dlbody" role="tabpanel" aria-labelledby="dlt-${cur}" tabindex="0">${d.note ? `<p class="muted" style="margin:8px 0">${esc(d.note)}</p>` : `<div class="ddscroll"><table class="dt ddt2"><thead><tr>${d.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${d.rows.slice(0, 15).map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${d.head.length}" class="muted">No rows.</td></tr>`}</tbody></table></div>${more > 0 ? `<p class="cap" style="margin:4px 0 0">… ${more} more ${more === 1 ? 'row' : 'rows'} in the file</p>` : ''}`}</div>
-    <div class="dlb">${(!canDl(fid)) ? '<span class="cap">Downloading is for family leads and Tech Risk.</span>' : (`<a class="btnlink" href="/api/items/${encodeURIComponent(S.p)}/${encodeURIComponent(fid)}.csv?by=${encodeURIComponent(LIVE.by || '')}" download>Download the items (.csv)</a>`)}
+    <div class="dlb">${(!canDl(fid)) ? '<span class="cap">Downloading is for family leads and Tech Risk.</span>' : (`<a class="btnlink" href="/api/items/${encodeURIComponent(S.p)}/${encodeURIComponent(fid)}.xlsx?by=${encodeURIComponent(LIVE.by || '')}" download>Download every item (Excel, one tab per metric)</a>`)}
       <button type="button" data-act="dl-copy" data-dl="copy">Copy CSV (Scores)</button> <span class="cap" id="dl-msg" role="status" aria-live="polite">${esc(DL.msg)}</span></div>
     <p class="cap" style="margin:8px 0 0">Prepared for ${esc(f.name)} · ${roleLabel()} · ${fd(today)} · Confidential · ${('Contains people’s names: confidential, for this family’s use only.')}</p>
     <p class="cap" style="margin:2px 0 0">${(`Every download is logged${LIVE.by ? ` as ${esc(LIVE.by)}` : ''}; the file contains only this family’s rows.`)}</p></section>`;
@@ -1908,7 +1889,7 @@ function needLine(id, x, t){
   let txt;
   if (m.higher_is_better && x.t01_fail) { const k = x.t01_fail, need = Math.ceil(t.green / 100 * d - EPS) - n;   // Tier 0/1 rule (SE-01/02): Red until those repos pass
     return `Red until the ${k} failing ${k === 1 ? 'repo on a Tier 0/1 app passes' : 'repos on Tier 0/1 apps pass'}${need > k ? ` · ${bMoreText(id, need, o)}` : ''}` + prov; }
-  if (m.higher_is_better) { const need = Math.ceil(t.green / 100 * d - EPS) - n; txt = need <= 0 ? 'At the Green tolerance' : bMoreText(id, need, o); }
+  if (m.higher_is_better) { const need = Math.ceil(t.green / 100 * d - EPS) - n; txt = need <= 0 ? 'At the Green tolerance' : o.fewer ? `${need} fewer ${o.fewer} to reach Green` : bMoreText(id, need, o); }   // TE-02: fewer reverted releases, not more releases
   else { const allowed = Math.floor(t.green / per * d + EPS), need = n - allowed; txt = need <= 0 ? 'At the Green tolerance' : `${need} fewer${o.fewer ? ' ' + o.fewer : ''} to reach Green`; }
   return txt + prov;
 }
@@ -1987,31 +1968,49 @@ function pickFocus(fr, p){                                  // at most four, in 
   const all = [...t1.map(e => [...e, 'new']), ...t2.map(e => [...e, 'auto']), ...tc.map(e => [...e, 'chronic']), ...t3.map(e => [...e, 'drop'])];
   return {shown: all.slice(0, 4), more: Math.max(0, all.length - 4)};
 }
-function problemItems(m, e){                                // the items behind the count: counted in the denominator and not done (higher is better) or counted as a problem (lower is better)
-  const ins = e.items.filter(i => i.in_denominator !== false), bad = (m.higher_is_better || isPF(m)) ? ins.filter(i => i.in_numerator === false) : ins.filter(i => i.in_numerator !== false);
-  return bad.sort((a, b) => (!!b.override_flag - !!a.override_flag) || ((b.days_overdue || 0) - (a.days_overdue || 0)) || (a.due_at ? (b.due_at ? a.due_at.localeCompare(b.due_at) : -1) : (b.due_at ? 1 : 0)) || a.item_id.localeCompare(b.item_id));
+/* ---------- the data behind a metric (owner, 9 Nov 2026) ----------
+   One table per metric with its own key details (config/metrics.json counting.columns), built by the back end into
+   evidence.json (entry.table: columns, rows with cells, attention, team_key, link). Items that pull the number down
+   come first. The first 10 rows show, then "Show all"; "Needs attention only" narrows it; "Download this table" gets
+   the same rows as a CSV. Used under a metric row (See the data) and in the per-team drill-down. */
+const TBL = {all:new Set(), att:new Set()};
+const ROWS_SHOWN = 10;
+function itemTable(fid, mid, e, team){
+  const t = e && e.table;
+  if (!t || !t.rows.length) return '<p class="cap" style="margin:0">No item detail for this metric this month.</p>';
+  const k = `${fid}|${mid}|${team || ''}`, all = team ? t.rows.filter(r => r.team_key === team) : t.rows;
+  if (!all.length) return '<p class="cap" style="margin:0">No items for this team.</p>';
+  const it = (e.items[0] || {}).item_type || 'item', noun = n => n === 1 ? it : it + 's';
+  const nAtt = all.filter(r => r.attention).length, onlyAtt = TBL.att.has(k) && nAtt > 0;
+  const rows = onlyAtt ? all.filter(r => r.attention) : all, N = rows.length, showAll = TBL.all.has(k), shown = showAll ? rows : rows.slice(0, ROWS_SHOWN);
+  const filt = S.snap || !nAtt || nAtt === all.length ? '' : `<span class="tbf noprint" role="group" aria-label="Which rows to show"><button type="button" class="sm" data-act="tbl-att" data-k="${esc(k)}" data-dd="ta:${esc(k)}" aria-pressed="${!onlyAtt}">All ${nfmt(all.length)}</button><button type="button" class="sm" data-act="tbl-att" data-k="${esc(k)}" data-dd="tb:${esc(k)}" aria-pressed="${onlyAtt}">Needs attention ${nfmt(nAtt)}</button></span>`;
+  const sum = `${nfmt(all.length)} ${noun(all.length)}${team ? ` from ${esc(subLabel(team))}` : ''} · ${nAtt ? `${nfmt(nAtt)} ${nAtt === 1 ? 'needs' : 'need'} attention, listed first` : 'none needs attention'}`;
+  const ty = t.types || [], cell = (c, j, r) => j ? (ty[j] === 'date' && c ? `<span class="nw">${fd(c)}</span>` : esc(c)) || '<span class="muted">—</span>' : r.link && /^https?:\/\//i.test(r.link) ? `<a href="${esc(r.link)}" target="_blank" rel="noopener"><b>${esc(c)}</b></a>` : `<b>${esc(c)}</b>`;
+  const dash = '<span class="muted">—</span>', ppl = (r, f) => (r.who || []).length ? r.who.map(f).join('') : dash;
+  const person = w => `<div class="wh"><b>${esc(w.name || w.sam || w.email)}</b>${w.name && w.sam ? `<span class="cap">${esc(w.sam)}</span>` : ''}${(w.name || w.sam) && w.email ? `<span class="cap">${esc(w.email)}</span>` : ''}</div>`;
+  const body = shown.map(r => `<tr${r.attention ? ' class="att"' : ''}><td>${r.attention ? '<span class="natt">Yes</span>' : '<span class="muted">No</span>'}</td>${r.cells.map((c, j) => `<td>${cell(c, j, r)}</td>`).join('')}`
+    + `<td class="dtl">${esc(r.detail) || dash}</td><td>${ppl(r, person)}</td><td>${(r.who || []).some(w => w.l4 || w.l3) ? r.who.map(w => `<div class="wh">${w.l4 ? `<span>L4 ${esc(w.l4)}</span>${w.l4_email ? `<span class="cap">${esc(w.l4_email)}</span>` : ''}` : ''}${w.l3 ? `<span class="cap">L3 ${esc(w.l3)}</span>` : ''}</div>`).join('') : dash}</td><td class="nw">${r.as_of ? fd(r.as_of) : dash}</td></tr>`).join('');
+  const more = N > ROWS_SHOWN && !S.snap ? `<button type="button" class="sm" data-act="tbl-all" data-k="${esc(k)}" data-dd="tl:${esc(k)}" aria-expanded="${showAll}">${showAll ? `Show the first ${ROWS_SHOWN}` : `Show all ${nfmt(N)}`}</button>` : '';
+  const dl = canDl(fid) && !S.snap ? `<a class="btnlink sm" href="/api/items/${encodeURIComponent(S.p)}/${encodeURIComponent(fid)}/${encodeURIComponent(mid)}.csv?${team ? 'team=' + encodeURIComponent(team) + '&' : ''}by=${encodeURIComponent(LIVE.by || '')}" download>Download this table (.csv)</a>` : '';
+  const shownTxt = N > shown.length ? `<span class="cap">Showing ${shown.length} of ${nfmt(N)}</span>` : '';
+  return `<div class="itb"><div class="itbh"><span class="cap">${sum}</span>${filt}</div>
+    <div class="ddscroll"><table class="dt ddt2 itt"><caption class="sr-only">The data behind ${esc(met(mid).name)}</caption><thead><tr><th>Needs attention</th>${t.columns.map(h => `<th>${esc(h)}</th>`).join('')}<th>Detail</th><th>Person</th><th>Managers (L4, L3)</th><th>As of</th></tr></thead><tbody>${body}</tbody></table></div>
+    ${shownTxt || more || dl ? `<div class="itbf">${shownTxt}${more || dl ? `<span class="noprint">${more}${dl}</span>` : ''}</div>` : ''}</div>`;
 }
 function whichPanel(fid, id, x){
   if (!FOC.which.has(focKey(fid, id))) return '';
-  const m = met(id), wrap = inner => `<div class="whp" id="whp-${id}" role="region" aria-label="Which ones: ${esc(m.name)}">${inner}<p class="noprint" style="margin:6px 0 0"><button type="button" class="sm" data-act="foc-which" data-id="${id}" data-dd="w|${id}" aria-controls="whp-${id}">Hide these items</button></p></div>`;
-  if (!canSeeItems()) return wrap('<p class="cap" style="margin:0">Item-level detail is restricted: available to Tech Risk and named auditors; family access pending the Restricted classification sign-off.</p>');
+  const m = met(id), wrap = inner => `<div class="whp" id="whp-${id}" role="region" aria-label="The data behind ${esc(m.name)}">${inner}<p class="noprint" style="margin:6px 0 0"><button type="button" class="sm" data-act="foc-which" data-id="${id}" data-dd="w|${id}" aria-controls="whp-${id}">Hide the data</button></p></div>`;
+  if (!canSeeItems()) return wrap('<p class="cap" style="margin:0">Item-level detail is for Tech Risk and the family’s own people.</p>');
   if (EV.state === 'idle' || EV.state === 'loading') return wrap('<p class="cap" role="status" style="margin:0">Loading…</p>');
-  if (EV.state === 'fail') return wrap(`<p class="cap" style="margin:0">${('Item detail couldn’t be loaded. Reload the page to try again.')}</p>`);
+  if (EV.state === 'fail') return wrap(`<p class="cap" style="margin:0">Item detail couldn’t be loaded. Reload the page to try again.</p>`);
   const e = EV.data[S.p] && EV.data[S.p][fid] && EV.data[S.p][fid][id];
-  if (!e) return wrap('<p class="cap" style="margin:0">No item detail for this metric this month.</p>');
-  const list = problemItems(m, e), X = list.length, Y = x.numerator != null && x.denominator != null ? cardCount(m, x).c : null, rate = !!(OUTSTANDING[id] && OUTSTANDING[id].rate);
-  if (!X) return wrap('<p class="cap" style="margin:0">No item detail for this metric this month.</p>');
-  const tn = {}; e.by_team.forEach(t => { tn[t.team_key] = t.team_name; });
-  const ik = focKey(fid, id), showAll = FOC.allItems.has(ik), rows = showAll ? list : list.slice(0, 10), hasApp = rows.some(i => i.app_id), hasDue = rows.some(i => i.due_at);
-  const note = `${Y != null && X < Y ? `The item extract lists ${X} of the ${Y} ${Y === 1 ? 'item' : 'items'} counted.` : `${X} ${X === 1 ? 'item' : 'items'} behind the number.`}${rate ? ' These are this month’s items; the number covers the last 3 months.' : ''}`;
-  const body = rows.map(i => `<tr><td><b>${esc(i.item_id)}</b>${i.override_flag ? ' <span class="aw">Automatic Red rule</span>' : ''}${i.tag ? `<br><span class="cap">${esc(i.tag)}</span>` : ''}</td>${hasApp ? `<td>${i.app_id ? esc(i.app_id) : '—'}</td>` : ''}<td>${esc(stName(i.team_key, tn[i.team_key]))}</td>${hasDue ? `<td>${i.due_at ? fd(i.due_at) + (i.days_overdue ? ` · ${i.days_overdue} ${i.days_overdue === 1 ? 'day' : 'days'} overdue` : '') : '—'}</td>` : ''}</tr>`).join('');
-  return wrap(`<p class="cap" style="margin:0 0 4px">${note}</p><div class="ddscroll"><table class="dt ddt2"><caption class="sr-only">Items behind ${esc(m.name)}</caption><thead><tr><th>Item</th>${hasApp ? '<th>App</th>' : ''}<th>Team</th>${hasDue ? '<th>Due</th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>${X > 10 ? `<p class="noprint" style="margin:4px 0 0"><button type="button" class="sm" data-act="foc-all" data-k="${ik}" data-dd="fa:${ik}" aria-expanded="${showAll}">${showAll ? 'Show the first 10' : `Show all ${X} items`}</button></p>` : ''}`);
+  return wrap(itemTable(fid, id, e));
 }
 function focusActs(fid, id){
   if (S.snap) return '';
   const k = focKey(fid, id), op = FOC.which.has(k), exOpen = S.form === id && S.formWhere === 'a', chOpen = FOC.chOpen === k;
   const nm = esc(met(id).name);
-  return `<span class="facts noprint">${isCTO() ? '' : `<button type="button" class="sm" data-act="foc-which" data-id="${id}" data-dd="w|${id}" aria-expanded="${op}" aria-controls="whp-${id}">Which ones ${op ? '▴' : '▾'}</button>`}`
+  return `<span class="facts noprint">${isCTO() ? '' : `<button type="button" class="sm" data-act="foc-which" data-id="${id}" data-dd="w|${id}" aria-expanded="${op}" aria-controls="whp-${id}">See the data ${op ? '▴' : '▾'}</button>`}`
     + (isCTO() || !may('comment', fid) ? '' : `<button type="button" class="sm" data-act="open" data-m="${id}" data-w="a" aria-expanded="${exOpen}" aria-label="Explain: ${nm}">Explain</button><button type="button" class="sm" data-act="foc-ch" data-id="${id}" data-dd="c|${id}" aria-expanded="${chOpen}" aria-controls="chf-${id}" aria-label="Challenge this number: ${nm}">Challenge this number</button>`) + '</span>';
 }
 function challengeForm(fid, id){
@@ -2034,7 +2033,7 @@ function focusSent(fid, id){
 /* Said once in the block head instead of on every row of the Firmwide column (design review, 5 Nov 2026). */
 function bMedianNote(ms, p){
   const ts = ms.filter(m => metState(m.id) === 'measured' && m.scored).map(m => p.thresholds[m.id]).filter(t => t && t.basis === 'Calibrated'), out = [];
-  if (ts.length) out.push('Firmwide = the firm’s own result for comparison');
+  if (ts.length) out.push('vs peers = the status against the tolerance threshold, set from the middle family · vs firmwide = the firm’s own result for comparison');
   return out.join(' · ');
 }
 /* ---------- family page metrics table (owner, 6 Nov 2026) ----------
@@ -2087,7 +2086,7 @@ function famTable(fid, fr, p, f, loading){
   if (provs.length) notes.push(`* ${monthOf(fr.metrics[provs[0].id].carried_from)} results reused — ${[...new Set(provs.map(m => m.provider))].join(' and ')}’s ${monthOf(S.p)} data was not received`);
   const anyOpen = !S.snap && ents.some(([id]) => famRowOpen(fid, id));
   const tools = S.snap ? '' : `<span class="noprint ftools">${blk ? `<span class="fchip">Showing ${esc(bname(blk))} only <button type="button" class="sm" data-act="blkf" data-b="${blk}">Show all</button></span>` : ''}${anyOpen ? `<button type="button" class="sm" data-act="row-close-all">Close all</button>` : ''}</span>`;
-  const head = `<thead><tr><th>Block</th><th>Metric</th><th>Result</th><th>Status</th><th>Firmwide</th><th>${PRIOR[S.p] ? 'vs ' + priorName() : 'Change'}</th><th>Where the items sit</th><th><span class="sr-only">Detail</span></th></tr></thead>`;
+  const head = `<thead><tr><th>Block</th><th>Metric</th><th>Result</th><th>vs peers</th><th>vs firmwide</th><th>${PRIOR[S.p] ? 'vs ' + priorName() : 'Change'}</th><th>Where the items sit</th><th><span class="sr-only">Detail</span></th></tr></thead>`;
   const table = ents.length ? `<div class="ftwrap"><table class="dt lt ft"><caption class="sr-only">${esc(f.name)} metrics, worst first</caption><colgroup><col class="cb" style="width:10%"><col style="width:17%"><col style="width:18%"><col style="width:8%"><col style="width:13%"><col style="width:11%"><col style="width:19%"><col style="width:4%"></colgroup>${head}<tbody>${rowsH}</tbody></table></div>`
     : `<p class="muted">${blk ? `Nothing measured in ${esc(bname(blk))} yet.` : 'Nothing measured yet.'}</p>`;
   return `<section class="grp" aria-labelledby="h-all">${tools}<h2 id="h-all">Metrics</h2><p class="cap" style="margin:0 0 8px">Worst first. Click a column head to sort${S.snap ? '' : ', a building block above to show only its metrics, or ▸ for the detail and to explain or challenge a number'}.</p>${table}
@@ -2318,6 +2317,76 @@ const feedMetrics = f => { const ids = String(f.feeds_metrics || '').match(/[A-Z
   if (COMMON_FEEDS[f.id]) return `<span class="cap">${esc(COMMON_FEEDS[f.id])}</span>`;
   return ids.length && ids.every(id => met(id)) ? [...new Set(ids)].map(metChip).join(' ') : `<span class="muted">${esc(f.feeds_metrics || '—')}</span>`; };
 const feedTitle = id => ((LAYOUTS.find(x => x.id === id) || {}).name || id);
+/* ---------- Lost and found (owner, 9 Nov 2026) ----------
+   Items in the month's files that no source could place with a product family (a change by someone not in HR, an
+   application whose product area matches no family...). A family lead, or Tech Risk, claims one; Tech Risk approves
+   or returns the claim; an approved claim places the item from the next Update and in every later month. A claim
+   never overrides a source file. Tech Risk can release an approved claim. Search and filters work in place. */
+const LF = {state:'idle', month:null, data:null, q:'', feed:'', met:'', st:'', form:null, dec:null, msg:'', err:'', ferr:''};
+function lfLoad(force){
+  if (!force && (LF.state === 'loading' || (LF.state === 'ok' && LF.month === S.p))) return;
+  LF.state = 'loading'; LF.month = S.p;
+  api('/api/lost/' + encodeURIComponent(S.p)).then(j => { LF.data = j; LF.state = 'ok'; })
+    .catch(e => { LF.state = 'fail'; LF.err = e.message; }).finally(() => { S.keepScroll = true; render(); });
+}
+const LF_ST = {draft:'Claim waiting for Tech Risk', approved:'Claim approved', returned:'Claim returned', withdrawn:'Claim withdrawn', released:'Claim released'};
+const lfClaimOn = (feed, item) => ((LF.data && LF.data.claims) || []).filter(c => c.feed === feed && String(c.item) === String(item) && (c.status === 'draft' || c.status === 'approved')).slice(-1)[0] || null;
+const lfFam = id => (LF.data && LF.data.families && LF.data.families[id]) || (fam(id) || {}).name || id;
+const lfMayClaim = fid => !ME || ME.can.run_month || (ME.lead_of || []).includes(fid);
+function lfFamilies(){ const all = Object.keys((LF.data && LF.data.families) || {}); return all.filter(lfMayClaim).sort((a, b) => lfFam(a).localeCompare(lfFam(b))); }
+function lfClaimForm(i){
+  const fams = lfFamilies(), k = i.feed + '|' + i.item;
+  if (!fams.length) return '<p class="cap">Only the family’s lead or Tech Risk can claim an item.</p>';
+  return `<form class="lff" data-k="${esc(k)}" aria-label="Claim ${esc(i.kind)} ${esc(i.item)}"><label>Product family <select name="family" required>${fams.length > 1 ? '<option value="">Choose…</option>' : ''}${fams.map(f => `<option value="${esc(f)}">${esc(lfFam(f))}</option>`).join('')}</select></label>
+    <label style="display:block;margin-top:6px">Why it’s yours (Tech Risk reads this)<textarea name="why" rows="2" maxlength="1000" required></textarea></label>${byField('margin-top:6px;display:block')}
+    <p style="margin:8px 0 0"><button type="submit" class="pri">Send the claim to Tech Risk</button> <button type="button" data-act="lf-cancel">Cancel</button></p>
+    <p class="cap" style="margin:6px 0 0">Once Tech Risk approves it, the item counts for that family from the next Update of any open month, and in every month after. Locked months don’t change.</p></form>`;
+}
+function vLost(){
+  lfLoad();
+  const head = `<div class="ph"><h1>Lost and found</h1><p class="cap" style="margin:4px 0 0;max-width:none">Items in ${esc(monthLabel(S.p))}’s files that TRUST couldn’t place with a product family, so they count only in the firm’s figures. If one is yours, claim it: Tech Risk checks the claim, and once it’s approved the item counts for your family from the next Update, this month and every month after.</p></div>`;
+  if (LF.state !== 'ok') return `<main class="wrap sheet">${head}<p class="cap" role="status">${LF.state === 'fail' ? esc(LF.err || 'The list couldn’t be loaded. Reload the page to try again.') : 'Loading…'}</p></main>`;
+  const d = LF.data, its = d.items || [], cl = d.claims || [];
+  if (!d.mapped) return `<main class="wrap sheet">${head}<p class="muted">${esc(monthLabel(S.p))} hasn’t been updated yet, so there is nothing to list. Upload the month’s files and press Update the scorecard.</p></main>`;
+  const feeds = [...new Set(its.map(i => i.feed))], mets = [...new Set(its.flatMap(i => i.metrics))].sort();
+  const kindOf = f => (its.find(i => i.feed === f) || {}).kind || f;
+  const metName = id => (MET_IDS.has(id) ? met(id).name : id);
+  const row = i => { const c = lfClaimOn(i.feed, i.item), k = i.feed + '|' + i.item, open = LF.form === k;
+    const st = c ? (c.status === 'draft' ? 'waiting' : 'approved') : 'none';
+    const cell = c ? `<span class="chip ${c.status === 'approved' ? 'ok' : 'wait'}">${c.status === 'approved' ? `Claimed by ${esc(lfFam(c.family_id))}` : `Waiting: ${esc(lfFam(c.family_id))}`}</span><div class="cap">${c.status === 'approved' ? (d.claims_used.includes(c.id) ? '' : 'Counts from the next Update') : 'Tech Risk to check'}</div>`
+      : (S.snap || (ME && ME.read_only) || !lfFamilies().length ? '<span class="muted">Not claimed</span>' : `<button type="button" class="sm" data-act="lf-claim" data-k="${esc(k)}" aria-expanded="${open}">Claim it</button>`);
+    const txt = [i.kind, i.item, i.names, i.why, ...i.metrics.map(metName), c ? lfFam(c.family_id) : ''].join(' ').toLowerCase();
+    return `<tr class="lfr" data-txt="${esc(txt)}" data-feed="${esc(i.feed)}" data-met="${esc(i.metrics.join(' '))}" data-st="${st}"><td>${esc(i.kind)}</td><td>${i.link && /^https?:\/\//i.test(i.link) ? `<a href="${esc(i.link)}" target="_blank" rel="noopener"><b>${esc(i.item)}</b></a>` : `<b>${esc(i.item)}</b>`}</td><td>${esc(i.names) || '<span class="muted">—</span>'}</td><td>${esc(i.why)}</td><td>${i.metrics.map(m => `<span class="tag">${esc(metName(m))}</span>`).join(' ')}</td><td>${cell}</td></tr>`
+      + (open ? `<tr class="subrow lfr-f" data-for="${esc(k)}"><td colspan="6">${lfClaimForm(i)}</td></tr>` : ''); };
+  const sel = (id, label, cur, opts) => `<label class="lfl">${label}<select id="${id}">${opts.map(([v, t]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const tools = `<div class="lftools noprint" role="search"><label class="lfl lfq">Search<input type="search" id="lf-q" value="${esc(LF.q)}" placeholder="Item, person, email, repo, reason…" autocomplete="off"></label>
+    ${sel('lf-feed', 'Source', LF.feed, [['', 'All sources'], ...feeds.map(f => [f, kindOf(f)])])}${sel('lf-met', 'Counts in', LF.met, [['', 'Any metric'], ...mets.map(m => [m, metName(m)])])}${sel('lf-st', 'Claim', LF.st, [['', 'Any'], ['none', 'Not claimed'], ['waiting', 'Claim waiting'], ['approved', 'Claim approved']])}
+    <button type="button" class="sm" data-act="lf-clear">Clear</button></div>`;
+  const nWait = cl.filter(c => c.status === 'draft').length, nAppr = cl.filter(c => c.status === 'approved').length;
+  const summary = `<p class="lfsum"><b>${plural(its.length, 'item', 'items')}</b> not placed this month · ${plural(nWait, 'claim', 'claims')} waiting for Tech Risk · ${plural(nAppr, 'claim', 'claims')} approved</p>`;
+  const table = its.length ? `${tools}<p class="cap" id="lf-count" role="status" aria-live="polite"></p><div class="ddscroll"><table class="dt lft"><caption class="sr-only">Items not placed with a product family</caption><colgroup><col style="width:13%"><col style="width:12%"><col style="width:20%"><col style="width:27%"><col style="width:14%"><col style="width:14%"></colgroup><thead><tr><th>Source</th><th>Item</th><th>Who or what it names</th><th>Why it wasn’t placed</th><th>Counts in</th><th>Claim</th></tr></thead><tbody>${its.map(row).join('')}</tbody></table></div><p class="cap" id="lf-none" hidden>Nothing matches. <button type="button" class="sm" data-act="lf-clear">Clear the search and filters</button></p>`
+    : `<p class="muted">Every item in ${esc(monthLabel(S.p))}’s files was placed with a product family. Nothing is lost.</p>`;
+  /* the claims, every month: waiting first */
+  const tr = !ME || ME.can.run_month, order = {draft:0, approved:1, returned:2, withdrawn:3, released:4};
+  const decideBtns = c => S.snap || (ME && ME.read_only) ? '' : c.status === 'draft' ? (tr ? `<button type="button" class="sm" data-act="lf-dec" data-id="${c.id}" data-d="approved">Approve</button> <button type="button" class="sm" data-act="lf-dec" data-id="${c.id}" data-d="returned">Return</button> ` : '') + (!ME || ME.name === c.by ? `<button type="button" class="sm" data-act="lf-dec" data-id="${c.id}" data-d="withdrawn">Withdraw</button>` : '')
+    : c.status === 'approved' && tr ? `<button type="button" class="sm" data-act="lf-dec" data-id="${c.id}" data-d="released">Release</button>` : '';
+  const decForm = LF.dec ? `<form class="lfd" data-id="${LF.dec.id}" data-d="${LF.dec.d}" style="margin:8px 0"><label>${{approved:'Approve', returned:'Return', withdrawn:'Withdraw', released:'Release'}[LF.dec.d]} claim ${LF.dec.id}${LF.dec.d === 'returned' || LF.dec.d === 'released' ? ': say why' : ' (a note is optional)'}<br><input name="reason" style="width:60%" maxlength="1000" ${LF.dec.d === 'returned' || LF.dec.d === 'released' ? 'required' : ''}></label> ${byField()} <button type="submit" class="pri">${{approved:'Approve', returned:'Return', withdrawn:'Withdraw', released:'Release'}[LF.dec.d]}</button> <button type="button" data-act="lf-dec-cancel">Cancel</button>${LF.dec.d === 'released' ? '<p class="cap" style="margin:4px 0 0">The item goes back to Lost and found at the next Update of each open month. Locked months don’t change.</p>' : ''}</form>` : '';
+  const cRows = cl.slice().sort((a, b) => (order[a.status] - order[b.status]) || (b.id - a.id)).map(c => `<tr><td><b>${esc(c.item)}</b><div class="cap">${esc((KIND_OF[c.feed] || c.feed))} · claimed from ${esc(monthLabel(c.month))}</div></td><td>${esc(lfFam(c.family_id))}</td><td>${esc(c.why)}</td><td>${esc(c.by)}<div class="cap">${fd(c.at)}</div></td><td>${esc(LF_ST[c.status] || c.status)}${c.decided_by ? `<div class="cap">${esc(c.decided_by)} · ${fd(c.decided_at)}${c.reason ? ' · ' + esc(c.reason) : ''}</div>` : ''}</td><td class="noprint">${decideBtns(c)}</td></tr>`).join('');
+  const claims = `<section class="grp" aria-labelledby="lf-ch"><h2 id="lf-ch">Claims</h2>${cl.length ? `${decForm}<table class="dt"><caption class="sr-only">Every claim, waiting first</caption><thead><tr><th>Item</th><th>Family</th><th>Why it’s theirs</th><th>Claimed by</th><th>Status</th><th class="noprint"><span class="sr-only">Decide</span></th></tr></thead><tbody>${cRows}</tbody></table><p class="cap">${tr ? 'Approving places the item from the next Update; releasing undoes it. Every decision is logged.' : 'Tech Risk approves or returns each claim. Every decision is logged.'}</p>` : '<p class="muted" style="margin:0">No claims yet.</p>'}</section>`;
+  const msg = (LF.msg ? `<p class="okmsg" role="status">${esc(LF.msg)}</p>` : '') + (LF.ferr ? `<p class="ferr" role="alert">${esc(LF.ferr)}</p>` : '');
+  return `<main class="wrap sheet lfp">${head}${msg}${summary}${table}${claims}</main>`;
+}
+const KIND_OF = {tcc:'Change (TCC)', ntcc:'Change outside TCC', actions:'Postmortem action', postmortems:'Incident', repos:'GitHub repo', cx_sast:'Checkmarx SAST project', cx_sca:'Checkmarx SCA project', itdr:'ITDR application'};
+function lfFilter(){
+  const q = ($('#lf-q') || {}).value || '', f = ($('#lf-feed') || {}).value || '', m = ($('#lf-met') || {}).value || '', st = ($('#lf-st') || {}).value || '';
+  Object.assign(LF, {q, feed:f, met:m, st});
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean), rows = [...document.querySelectorAll('tr.lfr')];
+  let n = 0;
+  rows.forEach(r => { const ok = words.every(w => r.dataset.txt.includes(w)) && (!f || r.dataset.feed === f) && (!m || r.dataset.met.split(' ').includes(m)) && (!st || r.dataset.st === st);
+    r.hidden = !ok; const fr = r.nextElementSibling; if (fr && fr.classList.contains('lfr-f')) fr.hidden = !ok; if (ok) n++; });
+  const c = $('#lf-count'); if (c) c.textContent = n === rows.length ? `Showing all ${plural(rows.length, 'item', 'items')}` : `Showing ${n} of ${plural(rows.length, 'item', 'items')}`;
+  const none = $('#lf-none'); if (none) none.hidden = n > 0 || !rows.length;
+}
 function liveByField(){ return byField(); }
 function ddForm(){
   const v = DD.form || {}, f = v.feed ? LAYOUTS.find(x => x.id === v.feed) : null;
@@ -3048,6 +3117,26 @@ function liveReqCard(pr){
     <p class="cap" style="margin:8px 0 0">${P.kind === 'retire' ? 'Retirement' : 'Change request'} · ${propChip(pr.status)} · by ${esc(P.by)} on ${fd(pr.date)}${m ? ` · about <a href="${href('/dictionary/' + m.id)}">${esc(m.id)} ${esc(m.name)}</a>` : ''}</p>
     <section class="dsec"><h3>What is asked</h3><dl class="dd">${rows}</dl></section>${liveReview(pr)}</article>`;
 }
+document.addEventListener('submit', e => {      // Lost and found: a claim, or a decision on one
+  const f = e.target;
+  if (f.matches('form.lff')) {
+    e.preventDefault();
+    const [feed, ...rest] = f.dataset.k.split('|'), item = rest.join('|'), it = ((LF.data && LF.data.items) || []).find(x => x.feed === feed && String(x.item) === item) || {};
+    const fam_ = f.family.value, why = f.why.value.trim();
+    if (!fam_ || !why) { LF.ferr = !fam_ ? 'Choose the product family.' : 'Say why it’s yours, so Tech Risk can check.'; S.keepScroll = true; render(); return; }
+    apiPost('/api/claims', {by:liveName(f), month:S.p, feed, item, family:fam_, why, label:`${it.kind || ''} ${item}`.trim()})
+      .then(() => { LF.form = null; LF.ferr = ''; LF.msg = `Claim sent: ${it.kind || 'item'} ${item} for ${lfFam(fam_)}. Tech Risk will check it.`; lfLoad(true); })
+      .catch(err => { LF.ferr = err.message; S.keepScroll = true; render(); });
+    return;
+  }
+  if (f.matches('form.lfd')) {
+    e.preventDefault();
+    const d = f.dataset.d, reason = f.reason.value.trim();
+    apiPost(`/api/claims/${f.dataset.id}/decide`, {by:liveName(f), decision:d, reason})
+      .then(() => { LF.dec = null; LF.ferr = ''; LF.msg = {approved:'Claim approved: the item counts for the family from the next Update.', returned:'Claim returned with your note.', withdrawn:'Claim withdrawn.', released:'Claim released: the item goes back to Lost and found at the next Update.'}[d]; lfLoad(true); })
+      .catch(err => { LF.ferr = err.message; S.keepScroll = true; render(); });
+  }
+});
 document.addEventListener('submit', e => {
   const f = e.target;
   if (f.id === 'ddform') { e.preventDefault(); const fe = f.elements, metrics = [...f.querySelectorAll('input[name=metrics]:checked')].map(x => x.value);
@@ -3169,6 +3258,7 @@ const SBI = {
   console:'<path d="M3 4h12M3 9h12M3 14h8"/>', datasources:'<ellipse cx="9" cy="5" rx="6" ry="2.5"/><path d="M3 5v8c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V5M3 9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>',
   datadict:'<rect x="3" y="3" width="12" height="12" rx="1.5"/><path d="M3 7h12M3 11h12M7 3v12"/>', scorecard:'<rect x="2.5" y="2.5" width="5.5" height="5.5"/><rect x="10" y="2.5" width="5.5" height="5.5"/><rect x="2.5" y="10" width="5.5" height="5.5"/><rect x="10" y="10" width="5.5" height="5.5"/>',
   firm:'<path d="M3 15V9M7.5 15V3.5M12 15v-7M16 15V6"/>', family:'<circle cx="9" cy="5.5" r="2.5"/><path d="M3.5 15c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>', dictionary:'<path d="M4 2.5h8.5a1.5 1.5 0 0 1 1.5 1.5v11H5.5A1.5 1.5 0 0 1 4 13.5zM4 13.5A1.5 1.5 0 0 1 5.5 12H14"/>',
+  lost:'<circle cx="8" cy="8" r="4.5"/><path d="M11.3 11.3L15 15M6.5 8h3M8 6.5v3"/>',
   validation:'<path d="M9 2l6 2.5v4.5c0 3.4-2.5 5.8-6 7-3.5-1.2-6-3.6-6-7V4.5z"/><path d="M6.2 9l2 2 3.6-3.8"/>', glossary:'<circle cx="4" cy="5" r="1"/><circle cx="4" cy="9" r="1"/><circle cx="4" cy="13" r="1"/><path d="M7.5 5h7M7.5 9h7M7.5 13h7"/>'};
 let SBC = null;      // sidebar collapsed (set from sessionStorage, else width)
 function sbCollapsed(){
@@ -3182,7 +3272,7 @@ function sidebar(route){
   const grp = (id, t, items) => items.length ? `<h2 class="sbh" id="sb-${id}"><span class="${col ? 'sr-only' : ''}">${t}</span></h2><ul aria-labelledby="sb-${id}">${items.join('')}</ul>` : '';
   const run = cons ? [item('/console', 'This month', 'console'), item('/datasources', 'Data sources', 'datasources')] : [];
   const sc = fl ? [item('/scorecard', 'CTO view', 'scorecard'), item('/family/' + fl, fam(fl).name, 'family'), item('/firm', 'Firm position', 'firm')] : [item('/scorecard', 'CTO view', 'scorecard'), item('/firm', 'Firm position', 'firm'), ...(defFam ? [item('/family/' + defFam, 'Product families', 'family')] : [])];
-  const gov = [item('/dictionary', 'Metric dictionary', 'dictionary'), item('/datadict', 'Data dictionary', 'datadict'), ...(cons ? [item('/validation', 'Validation checks', 'validation')] : []), item('/glossary', 'Glossary', 'glossary')];
+  const gov = [item('/dictionary', 'Metric dictionary', 'dictionary'), item('/datadict', 'Data dictionary', 'datadict'), item('/lost', 'Lost and found', 'lost'), ...(cons ? [item('/validation', 'Validation checks', 'validation')] : []), item('/glossary', 'Glossary', 'glossary')];
   $('#side').className = 'side' + (col ? ' col' : '');
   $('#side').innerHTML = `<button type="button" class="sbtog" data-act="sb-toggle" aria-expanded="${!col}" aria-label="${col ? 'Expand sidebar' : 'Collapse sidebar'}" title="${col ? 'Expand sidebar' : 'Collapse sidebar'}">${col ? '' : '<span>Collapse</span>'}<svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 3L5 9l6 6"/></svg></button>
     <nav aria-label="Main">${grp('run', 'Run', run)}${grp('score', 'Scorecard', sc)}${grp('gov', 'Governance', gov)}</nav>`;
@@ -3268,7 +3358,7 @@ function render(){
   const y = window.scrollY, keep = S.keepScroll; S.keepScroll = false;
   if (route !== 'datasources') { IN.res = null; IN.msg = null; } else if (IN.res && (IN.res.pid !== S.p || !arg || arg !== 'upload-' + IN.res.feed)) IN.res = null;
   FPID = 0; chrome(route);
-  $('#app').innerHTML = ({dictionary:() => vDictionary(arg), scorecard:vScorecard, family:() => vFamily(arg), glossary:vGlossary, datadict:() => vDataDict(arg), firm:vFirm, console:vConsole, datasources:() => vDataSources(arg), validation:vAuditor}[route] || vScorecard)();
+  $('#app').innerHTML = ({dictionary:() => vDictionary(arg), scorecard:vScorecard, family:() => vFamily(arg), glossary:vGlossary, datadict:() => vDataDict(arg), lost:vLost, firm:vFirm, console:vConsole, datasources:() => vDataSources(arg), validation:vAuditor}[route] || vScorecard)();
   if (['scorecard', 'firm', 'family'].includes(route) && !S.snap) $('#app').insertAdjacentHTML('beforeend', lockLine());
   { const here = location.hash; if (LIVE.route !== here) { if (LIVE.route !== undefined && !LIVE.busy) LIVE.msg = LIVE.err = null; LIVE.route = here; }
     if ((LIVE.msg || LIVE.err) && !document.getElementById('lvmsg')) $('#app').insertAdjacentHTML('afterbegin', liveMsgHTML()); }
@@ -3284,6 +3374,7 @@ function render(){
   if (route === 'console' && arg === 'lock-record') { const lr = document.getElementById('lock-record'); if (lr) { lr.scrollIntoView(); lr.focus({preventScroll:true}); } }
   if (IN.focus) { const k = IN.focus; IN.focus = null; const el = k === 'msg' ? document.getElementById('inmsg') : document.querySelector(`[data-act="in-upload"][data-f="${k.slice(4)}"]`); if (el) el.focus({preventScroll:true}); }
   dictFilter();
+  if (route === 'lost') lfFilter();
   if (DICT.fv) { const n = document.querySelector(`[data-act=dict-view][data-v="${DICT.fv}"]`); DICT.fv = null; if (n) n.focus({preventScroll:true}); }
   if (DICT.focus) { const id = DICT.focus; DICT.focus = null; const card = $('#dict-card'), row = document.querySelector(`.dictrow[data-id="${id}"]`);
     if (card && (window.innerWidth < 1100 || card.getBoundingClientRect().top < 0)) { card.scrollIntoView(); const hd = card.querySelector('h2'); if (hd && window.innerWidth < 1100) hd.focus({preventScroll:true}); else if (row) row.focus({preventScroll:true}); }
@@ -3294,6 +3385,7 @@ document.addEventListener('change', e => {
   if (e.target.id === 'month') { S.p = e.target.value; render0(); }
   if (e.target.id === 'role') { S.r = e.target.value; const fl = roleFam(); go(fl ? '/family/' + fl : isTR() ? '/console' : '/scorecard'); }
   if (e.target.id === 'fpick') go('/family/' + e.target.value);
+  if (['lf-feed', 'lf-met', 'lf-st'].includes(e.target.id)) lfFilter();
 });
 function render0(){ const [r, a] = parse(); S.p = $('#month') ? $('#month').value : S.p; go('/' + r + (a ? '/' + a : '')); }
 document.addEventListener('click', e => {
@@ -3304,6 +3396,12 @@ document.addEventListener('click', e => {
   if (a === 'cn-month') { S.p = b.dataset.p; S.keepScroll = true; go('/console'); return; }
   
   if ((a.startsWith('lv-'))) { liveAct(a, b); return; }
+  if (a === 'lf-claim') { LF.form = LF.form === b.dataset.k ? null : b.dataset.k; LF.msg = ''; S.keepScroll = true; render();
+    const f = document.querySelector(`form.lff[data-k="${CSS.escape(b.dataset.k)}"] select, form.lff[data-k="${CSS.escape(b.dataset.k)}"] textarea`); if (f) f.focus({preventScroll:true}); return; }
+  if (a === 'lf-cancel') { const k = LF.form; LF.form = null; LF.ferr = ''; S.keepScroll = true; render(); const t = document.querySelector(`[data-act=lf-claim][data-k="${CSS.escape(k || '')}"]`); if (t) t.focus(); return; }
+  if (a === 'lf-clear') { Object.assign(LF, {q:'', feed:'', met:'', st:''}); ['lf-q', 'lf-feed', 'lf-met', 'lf-st'].forEach(id => { const n = $('#' + id); if (n) n.value = ''; }); lfFilter(); const q = $('#lf-q'); if (q) q.focus(); return; }
+  if (a === 'lf-dec') { LF.dec = {id:+b.dataset.id, d:b.dataset.d}; LF.msg = ''; S.keepScroll = true; render(); const i = document.querySelector('form.lfd input[name=reason]'); if (i) i.focus({preventScroll:true}); return; }
+  if (a === 'lf-dec-cancel') { LF.dec = null; S.keepScroll = true; render(); return; }
   
   if (a === 'dot') { let r = document.getElementById('mrow-' + b.dataset.m);
     if (!r && FAMT.blk) { FAMT.blk = null; S.keepScroll = true; render(); r = document.getElementById('mrow-' + b.dataset.m); }
@@ -3345,6 +3443,9 @@ document.addEventListener('click', e => {
     if (S.form && S.formWhere === 'a' && !draft) S.form = null;          // an explanation being typed stays open
     [...DDS.l1].filter(k => k.startsWith('a|')).forEach(k => DDS.l1.delete(k));
     DDS.focus = null; secSave(); S.keepScroll = true; render(); secRestore(); const h = document.getElementById('h-att'); if (h) { h.tabIndex = -1; h.focus({preventScroll:true}); } return; }
+  if (a === 'tbl-att' || a === 'tbl-all') { const set = a === 'tbl-att' ? TBL.att : TBL.all, k = b.dataset.k;
+    if (a === 'tbl-att') { if ((b.dataset.dd || '').startsWith('tb:')) set.add(k); else set.delete(k); TBL.all.delete(k); } else if (set.has(k)) set.delete(k); else set.add(k);
+    DDS.focus = b.dataset.dd; secSave(); S.keepScroll = true; render(); secRestore(); ddFocus(); return; }
   if (a === 'foc-which') { const k = focKey(parse()[1], b.dataset.id); if (FOC.which.has(k)) FOC.which.delete(k); else { FOC.which.add(k); evLoad(); } DDS.focus = b.dataset.dd; secSave(); S.keepScroll = true; render(); secRestore(); ddFocus(); return; }
   if (a === 'foc-ch') { const k = focKey(parse()[1], b.dataset.id); FOC.chOpen = FOC.chOpen === k ? null : k; S.form = null; S.keepScroll = true; render(); const t = document.getElementById('cht-' + b.dataset.id); if (t) t.focus(); else { const o = document.querySelector(`[data-dd="c|${b.dataset.id}"]`); if (o) o.focus({preventScroll:true}); } return; }
   if (a === 'foc-ch-cancel') { FOC.chOpen = null; S.keepScroll = true; render(); const o = document.querySelector(`[data-dd="c|${b.dataset.id}"]`); if (o) o.focus({preventScroll:true}); return; }
@@ -3375,7 +3476,7 @@ document.addEventListener('click', e => {
   
   if (a === 'cancel') { S.form = null; S.keepScroll = true; render(); }
 });
-document.addEventListener('input', e => { if (e.target.id === 'dsearch') dictFilter(); if (e.target.id === 'cft') $('#cfc').textContent = e.target.value.length; });
+document.addEventListener('input', e => { if (e.target.id === 'lf-q') lfFilter(); if (e.target.id === 'dsearch') dictFilter(); if (e.target.id === 'cft') $('#cfc').textContent = e.target.value.length; });
 document.addEventListener('submit', e => {
   const f = e.target.closest('.cf'); if (!f) return; e.preventDefault();
   if (f.classList.contains('chf')) { const fid = f.dataset.f, mid = f.dataset.m, why = f.querySelector('select').value, more = f.querySelector('textarea').value.trim();

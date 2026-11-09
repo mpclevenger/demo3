@@ -143,7 +143,7 @@ def test_drill_down_and_csv_download(client):
     te01 = ev["payments"]["TE-01"]
     assert te01["n_items"] == 3 and sum(t["den"] for t in te01["by_team"]) == 3            # 2 TCC + 1 Non-TCC
     it = te01["items"][0]
-    assert it["item_type"] == "deployment" and it["tag"].startswith(("Through TCC", "Outside TCC")) and it["team_key"]
+    assert it["item_type"] == "change" and it["tag"].startswith(("Through TCC", "Outside TCC")) and it["team_key"]
     assert all(t["team_key"] and t["team_name"] for f in ev.values() for e in f.values() for t in e["by_team"])
     un02 = next(e for f in ev.values() for m, e in f.items() if m == "UN-02")
     assert all(i["item_type"] == "action" for i in un02["items"])
@@ -152,6 +152,58 @@ def test_drill_down_and_csv_download(client):
     text = r.data.decode("utf-8-sig")
     assert "Metric,Metric name,Item,What it shows,Needs attention,Person,Team" in text and "TE-01" in text
     assert client.get("/api/items/2026-09/nope.csv").status_code == 404
+
+
+def test_each_metric_has_its_data_table_and_downloads(client):
+    """Owner, 9 Nov 2026: drill into the data on the page (a table per metric, its own key details, items that
+    need attention first), download one table as a CSV, and download everything as Excel, one tab per metric."""
+    import io
+    from openpyxl import load_workbook
+    ready(client)
+    for feed, name in (("actions", "actions_export.csv"), ("postmortems", "postmortems_export.csv"),
+                       ("ntcc", "ntcc_export.csv")):
+        up(client, feed, name)
+    client.post("/api/update", json={"month": "2026-09", "by": "Tester"}, headers=H)
+    ev = client.get("/evidence.json").json["2026-09"]
+    t = ev["payments"]["TE-01"]["table"]
+    assert t["columns"] == ["Change", "Route", "Created", "Deployed"] and t["types"][2] == "date"
+    assert len(t["rows"]) == 3 and all(len(r["cells"]) == 4 for r in t["rows"])
+    r0 = t["rows"][0]                                                         # owner, 9 Nov 2026: the minimum
+    assert r0["who"] and r0["who"][0]["name"] and r0["who"][0]["sam"] and r0["who"][0]["email"]
+    assert set(r0["who"][0]) >= {"l4", "l4_email", "l3", "l3_email"} and r0["as_of"] and r0["detail"]
+    att = [r["attention"] for r in t["rows"]]
+    assert att == sorted(att, reverse=True)                                   # needs attention first
+    assert [r["cells"][1] for r in t["rows"] if r["attention"]] == ["Outside TCC (Non-TCC)"]
+    r = client.get("/api/items/2026-09/payments/TE-01.csv")
+    assert r.status_code == 200 and "trust-TE-01-payments-2026-09.csv" in r.headers["Content-Disposition"]
+    lines = r.data.decode("utf-8-sig").splitlines()
+    assert lines[1] == ("Needs attention,Change,Route,Created,Deployed,Detail,Name,ID (SAM account),Email,L4 manager,"
+                        "L4 manager email,L3 manager,L3 manager email,Team,Product family,As of (file uploaded),Link")
+    assert len(lines) == 5 and ",Payments," in lines[2]
+    team = t["rows"][0]["team_key"]
+    some = client.get(f"/api/items/2026-09/payments/TE-01.csv?team={team}").data.decode("utf-8-sig").splitlines()
+    assert 2 < len(some) <= len(lines)
+    assert client.get("/api/items/2026-09/payments/XX-99.csv").status_code == 404
+    x = client.get("/api/items/2026-09/payments.xlsx")
+    assert x.status_code == 200 and "spreadsheetml" in x.headers["Content-Type"]
+    wb = load_workbook(io.BytesIO(x.data))
+    assert wb.sheetnames[0] == "About" and "TE-01" in wb.sheetnames and "UN-02" in wb.sheetnames
+    assert [c.value for c in wb["TE-01"][2]][:3] == ["Needs attention", "Change", "Route"]
+    assert client.get("/api/items/2026-09/nope.xlsx").status_code == 404
+
+
+def test_every_measured_metric_lists_columns_that_its_items_carry():
+    """counting.columns in config/metrics.json name fields the measure step really puts on each item."""
+    from trust import config, evidence
+    for mid, m in config.metrics().items():
+        cols = (m.get("counting") or {}).get("columns")
+        if m.get("status") != "Measured":
+            continue
+        assert cols, f"{mid} has no counting.columns"
+        for c in cols:
+            assert c.get("label") and c.get("field"), (mid, c)
+            assert c.get("as") in (None, "yes_no", "date", "list", "map", "of"), (mid, c)
+        assert evidence.table(mid, [])["columns"] == [c["label"] for c in cols]
 
 
 def test_csv_cells_that_excel_would_run_are_quoted():

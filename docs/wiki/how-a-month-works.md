@@ -27,6 +27,12 @@ Words in *italics* are explained in the glossary (kept outside this repo). Rules
 
 Once a month is older than 24 months, **retention** removes it (locked or not) and drops older runs of newer months. The scheduler add-on runs it monthly ([deployment](deployment.md#retention)).
 
+## Lost and found, before the lock
+
+Some items can't be placed with a product family by any source file, for example a change made by someone who isn't in HR, or a repo with no owner. They count only in the firm's figures. The **Lost and found** page (under Governance) lists them for the month. Before you lock, open it and see whether any should belong to a family. A family lead can claim an item for their own family, and Tech Risk can claim for any family. Tech Risk then approves the claim, or returns it with a reason.
+
+An approved claim places the item at the **next Update** of any open month. It then carries over to every later month where the same item appears (the same repo or ITDR Ref, for example). A change ticket is new each month, so it needs a new claim. Locked months don't change. A claim never overrides a source file: only an item still unplaced takes its claim. So a claim can move scores, and you should Update again after approving one. The mapped month records how many items claims placed and shows an information-only note, which never needs acknowledging. If a claim was a mistake, Tech Risk can release it and Update again.
+
 ## The timeline
 
 Providers usually send in the first week after month end, families review their page the week after, and Tech Risk locks soon after that. The CTO view is then the pre-read for the leadership meeting. This is a guide for the current month, not a gate: TRUST has no business calendar and enforces no dates, and historical months can be loaded at any time.
