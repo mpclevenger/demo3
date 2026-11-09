@@ -1,0 +1,9 @@
+app_id,app_name,app_status,app_department,app_sbu,app_org_hierarchy,app_owner_raw,app_owner_type,app_owner_email,bcp_tier,bcp_tier_source,itdr_match,service_id,service_name,service_owner_email,service_repo,unmapped_reasons
+P1,Payments app 1,Confirmed,Pay,SBU1,Tech > Nowhere > X,x,Person,alex.moreno@example.com,,,,,,,,
+P2,Payments app 2,Confirmed,Pay,SBU1,Tech > Nowhere > X,x,Person,alex.moreno@example.com,,,,,,,,
+P3,Payments app 3,Confirmed,Pay,SBU1,Tech > Nowhere > X,x,Person,alex.moreno@example.com,,,,,,,,
+P4,Payments app 4,Confirmed,Pay,SBU1,Tech > Nowhere > X,x,Person,alex.moreno@example.com,,,,,,,,
+P5,Payments app 5,Confirmed,Pay,SBU1,Tech > Nowhere > X,x,Person,alex.moreno@example.com,,,,,,,,
+C1,Cards app 1,Confirmed,Cards,SBU1,Tech > Nowhere > X,x,Person,pat.kim@example.com,,,,,,,,
+C2,Cards app 2,Confirmed,Cards,SBU1,Tech > Nowhere > X,x,Person,pat.kim@example.com,,,,,,,,
+R1,Retired app,Retired,Pay,SBU1,Tech > Nowhere > X,x,Person,alex.moreno@example.com,,,,,,,,

@@ -46,7 +46,7 @@ On **This month**, press **Update the scorecard**. It reads the newest file of e
 - [ ] Tell family leads their page is ready. They read it, add explanations (a comment on a metric, a building block or the whole family) and raise data queries.
 - [ ] Answer each **data query** on **This month** and close it when settled. Comments never change a score.
 - [ ] If a file is corrected, upload it and **Update the scorecard** again.
-- [ ] Spot-check big moves and the automatic Red rules on the watch list.
+- [ ] Spot-check big moves on the watch list (automatic Red rules are off for now, owner 9 Nov 2026).
 
 ## 4. Check, acknowledge and lock
 
@@ -98,8 +98,9 @@ Everything about a metric except the counting itself lives in **`config/metrics.
 
 | To change | Edit in `config/metrics.json` | Also |
 |---|---|---|
-| A known limit | `known_limits`: add a line `{"limit": "...", "mitigation": "...", "status": "Partly mitigated"}`, or delete one | Nothing else |
-| Card text (risk it watches, population, exclusions, time basis) | `card` | Nothing else |
+| A known limitation | `known_limits`: add a line `{"limit": "...", "mitigation": "...", "status": "Partly mitigated"}`, or delete one. None listed = no section on the card | Nothing else |
+| Risks it watches | `card.risks`: the risk file names (without `.yaml`) from `config/risks/`, copies of the risk assessment engine's risk files | Add or replace the risk file in `config/risks/` |
+| Card text (population, exclusions, when it counts) | `card` | Nothing else |
 | Whether it's live | `status`: `Measured`, `In progress`, `Planned` or `Coming soon` (anything but Measured counts in no score) | A metric moving to Measured needs its counting code first |
 | Name or formula labels | `name`, `numerator_label`, `denominator_label` | Nothing else |
 | Phrases on the family page | `wording` (`outstanding` = what's short, `counts` = "n of d …") | Nothing else |
@@ -107,5 +108,10 @@ Everything about a metric except the counting itself lives in **`config/metrics.
 | **How it is counted** | `counting` describes it | The metric's function in `backend/trust/measure.py`, and its test |
 | Tolerance threshold | (not here) | `config/thresholds.json`; ask the owner first |
 
-After an edit: run `python -m pytest -q tests` (it catches a broken file), deploy, then update the month. Locked months keep their numbers. Any scoring change is the owner's decision first (AGENTS.md).
+After an edit: run `python -m pytest -q tests` (it catches a broken file), then deploy.
+
+- **Wording, cards, known limitations, risks and status** show on the site as soon as it is deployed, for every month.
+- **A change to how a metric is counted** shows only after **Update the scorecard** is pressed for each month (Tech Risk, This month). Until then the site shows the old numbers under the new wording, so update every open month straight after deploying. Locked months keep their sealed numbers until reopened and updated.
+
+Any scoring change is the owner's decision first (DEVELOPER_GUIDE).
 

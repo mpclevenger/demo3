@@ -16,7 +16,7 @@ import json
 import os
 import re
 
-from . import codelinks, evidence, measure, score_month, scoring, storage, store
+from . import codelinks, config, evidence, measure, score_month, scoring, storage, store
 
 
 def _prev(month, months):
@@ -175,26 +175,17 @@ def build(empty_months=()):
         periods[m] = p
 
     data = dict(tpl)
-    # UN-01 / UN-03 are plain counts until the app inventory arrives (owner, 2 Nov 2026): say so in the unit.
-    counted = {}
-    for m in months:
-        counted.update(periods[m].get("count_only", {}))
-    metrics = []
-    for x in tpl["metrics"]:
-        if x["id"] in counted:
-            x = dict(x, unit=counted[x["id"]], unit_one=measure.COUNT_ONE.get(x["id"], counted[x["id"]]), count_only=True)
-        if x["id"] in measure.COMING_SOON:
-            x = dict(x, coming_soon=True)
-        metrics.append(x)
-    data["metrics"] = metrics
+    data["metrics"] = _metric_list(tpl, periods)
     data.update(
         # The firm tolerance threshold is a setting; with no value set, the page leaves out the line and the sentence.
         firm_tolerance=_firm_tolerance(),
         min_families_for_threshold=score_month.min_families(score_month.thresholds_config()),   # shown in the dictionary
-        behind_peers_flag=bool(score_month.thresholds_config().get("behind_peers_flag", True)),   # owner, 8 Nov 2026: Flags section shown only when on
+        behind_peers_flag=bool(score_month.thresholds_config().get("behind_peers_flag", True)),
+        automatic_red_rules=bool(score_month.thresholds_config().get("automatic_red_rules", True)),   # owner, 9 Nov 2026
+        data_sources=config.data_sources(),                         # who owns each data source (owner, 9 Nov 2026)   # owner, 8 Nov 2026: Flags section shown only when on
         caps=scoring.caps_from(score_month.thresholds_config().get("caps")),   # the current caps; each month keeps its own
         code_links=codelinks.links(),      # links from each metric card to its code (owner, 5 Nov 2026); {} without code_repo_url
-        env_label=env_label(), test_env=is_test_env(), live=True, feeds=list(store.FEEDS), families=families, periods=periods, entries=[], connectors=[], weight_overrides=[],
+        env_label=env_label(), test_env=is_test_env(), live=True, feeds=list(store.FEEDS), families=families, periods=periods, entries=[], connectors=[], 
         trend=dict(months=months, sample_before=None,
                    firm=[periods[m]["firm_trust"] for m in months],
                    families={f["id"]: [periods[m]["families"].get(f["id"], {}).get("trust") for m in months]
@@ -226,6 +217,31 @@ def page_html(data):
                   lambda m: m.group(1) + safe + m.group(2), html, count=1, flags=re.S)
 
 
+def _metric_list(tpl, periods):
+    """The page's metric list from the definitions; a metric with no source yet is marked coming soon."""
+    metrics = []
+    for x in tpl["metrics"]:
+        if x["id"] in measure.COMING_SOON:
+            x = dict(x, coming_soon=True)
+        metrics.append(x)
+    return metrics
+
+
+def with_current_definitions(data):
+    """The metrics and their dictionary cards as deployed now (config/metrics.json), not the copy saved at the
+    last update (owner, 8 Nov 2026: a changed definition shows as soon as it is deployed). Scores and every
+    month's results are left exactly as published; only Update changes those."""
+    tpl = score_month.template()
+    data = dict(data)
+    data["metrics"] = _metric_list(tpl, data.get("periods") or {})
+    data["dictionary"] = dict(data.get("dictionary") or {}, metrics=tpl["dictionary"]["metrics"])
+    data["behind_peers_flag"] = bool(score_month.thresholds_config().get("behind_peers_flag", True))
+    data["automatic_red_rules"] = bool(score_month.thresholds_config().get("automatic_red_rules", True))
+    data["data_sources"] = config.data_sources()
+    data["code_links"] = codelinks.links()
+    return data
+
+
 def site_data(published, current_month):
     """What the website shows: the published data, plus any month with uploads that isn't scored yet; before
     anything is published, the real site for the current month with no data. Built only when needed."""
@@ -233,7 +249,7 @@ def site_data(published, current_month):
     # Months with uploads, and always the current month, so its files can be uploaded (owner, 4 Nov 2026).
     missing = sorted({m for m in storage.upload_months() + [current_month] if m not in shown})
     if published and not missing:
-        return published
+        return with_current_definitions(published)
     data = build(empty_months=missing)
     if not published:
         data["nothing_published"] = True

@@ -13,6 +13,8 @@
   "coverage": {"block_min_share": 0, "trust_min_blocks": 1},
   "_min_families_for_threshold": "Owner, 4 Nov 2026: a tolerance threshold worked out from the prevailing median needs at least this many families with a result; with fewer, the metric shows No tolerance threshold yet and isn't scored that month. Policy thresholds (like RE-02) don't need it.",
   "min_families_for_threshold": 5,
+  "_automatic_red_rules": "Owner, 9 Nov 2026: automatic Red rules are off for now. Today the only one built is TE-02's: a release with client impact (Status Client) makes the result Red and caps the Releases block at 49. true = on again; the cards then show their Automatic Red row. Client-impact releases are still counted and shown either way. Deploy, then update the month.",
+  "automatic_red_rules": false,
   "_behind_peers_flag": "Owner, 8 Nov 2026: the Behind peers flag is off for now (every measured metric uses the prevailing median, whose colours already compare each family with the median). true = flag Policy metrics again (a family at least the card's gap worse than the median family, 5 families needed) and show the Flags section on cards. Deploy, then update the month.",
   "behind_peers_flag": false,
   "amber_band_min_points": 5,
@@ -49,8 +51,8 @@
     },
     "UN-01": {
       "basis": "Prevailing median",
-      "amber_band_min": 1,
-      "_note": "Owner, 3 Nov 2026: scored as a plain count of Critical and SWE incidents against the prevailing median until app-level data allows 'per 10 apps'. The Amber band is in incidents (at least 1), not percentage points."
+      "amber_band_min": 0.5,
+      "_note": "Owner, 9 Nov 2026: Critical and SWE incidents per 10 confirmed apps (app inventory), against the prevailing median of the families that had incidents; a family with none is shown, not scored. The Amber band is in incidents per 10 apps, at least 0.5 (to confirm with the owner)."
     },
     "RE-01": {
       "basis": "Prevailing median",

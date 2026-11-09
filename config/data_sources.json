@@ -1,0 +1,105 @@
+{
+  "_how_to": [
+    "One section per data source (the file TRUST receives), keyed by its feed id.",
+    "owner: the named person who owns the data, i.e. who we get it from. team: their team. Leave blank until known; the Data dictionary then shows the contact from an approved data contract, or 'Not named yet'.",
+    "Keys starting with _ are notes (here, the source's name as the page shows it) and are ignored.",
+    "After an edit: run the tests, then deploy. No Update needed."
+  ],
+  "sources": {
+    "hr": {
+      "_name": "HR",
+      "owner": "",
+      "team": ""
+    },
+    "hr_mapping": {
+      "_name": "Product family owners",
+      "owner": "",
+      "team": ""
+    },
+    "app_inventory": {
+      "_name": "App inventory",
+      "owner": "",
+      "team": ""
+    },
+    "app_owner_members": {
+      "_name": "AD owner groups",
+      "owner": "",
+      "team": ""
+    },
+    "repos": {
+      "_name": "GitHub repos",
+      "owner": "",
+      "team": ""
+    },
+    "tcc": {
+      "_name": "TCC changes",
+      "owner": "",
+      "team": ""
+    },
+    "ntcc": {
+      "_name": "Non-TCC changes",
+      "owner": "",
+      "team": ""
+    },
+    "postmortems": {
+      "_name": "Postmortems",
+      "owner": "",
+      "team": ""
+    },
+    "actions": {
+      "_name": "Action items",
+      "owner": "",
+      "team": ""
+    },
+    "cx_sast": {
+      "_name": "Checkmarx SAST",
+      "owner": "",
+      "team": ""
+    },
+    "cx_sca": {
+      "_name": "Checkmarx SCA",
+      "owner": "",
+      "team": ""
+    },
+    "commits": {
+      "_name": "Commit counts (GHES)",
+      "owner": "",
+      "team": ""
+    },
+    "itdr": {
+      "_name": "ITDR applications",
+      "owner": "",
+      "team": ""
+    },
+    "dr_tests": {
+      "_name": "DR tests",
+      "owner": "",
+      "team": ""
+    },
+    "secrets": {
+      "_name": "Secrets findings",
+      "owner": "",
+      "team": ""
+    },
+    "cyberark": {
+      "_name": "CyberArk accounts",
+      "owner": "",
+      "team": ""
+    },
+    "sailpoint": {
+      "_name": "SailPoint apps",
+      "owner": "",
+      "team": ""
+    },
+    "hosting_eol": {
+      "_name": "Hosting platform components",
+      "owner": "",
+      "team": ""
+    },
+    "defects": {
+      "_name": "Jira issues",
+      "owner": "",
+      "team": ""
+    }
+  }
+}

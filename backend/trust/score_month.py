@@ -46,12 +46,14 @@ def template():
     parts = ("card", "known_limits", "wording", "counting", "status_note")
     tpl["metrics"] = [dict(id=mid, **{k: v for k, v in x.items() if k not in parts and not k.startswith("_")})
                       for mid, x in defs.items()]
-    tpl.setdefault("dictionary", {})["metrics"] = {mid: dictionary_card(x) for mid, x in defs.items()}
+    risks = config.risks()
+    tpl.setdefault("dictionary", {})["metrics"] = {mid: dictionary_card(x, risks) for mid, x in defs.items()}
     return tpl
 
 
-def dictionary_card(x):
-    """One metric's dictionary card as the page reads it: the card, its known limits and its wording."""
+def dictionary_card(x, risks=None):
+    """One metric's dictionary card as the page reads it: the card, its known limitations, its wording and the
+    risks it watches (from the risk assessment engine's files in config/risks/)."""
     c = {k: v for k, v in (x.get("card") or {}).items() if not k.startswith("_")}
     c.setdefault("override_rule", x.get("override_rule"))
     c["status"] = x.get("status") or "Measured"
@@ -66,6 +68,11 @@ def dictionary_card(x):
                                    status=r.get("status") or "No mitigation yet") for r in limits]
     if x.get("wording"):
         c["wording"] = x["wording"]
+    c["risks_detail"] = []
+    for rid in c.get("risks") or []:
+        r = (risks or {}).get(rid)
+        c["risks_detail"].append({"id": rid, "missing": True} if r is None else
+                                 {"id": rid, **{k: str(r.get(k) or "").strip() for k in ("domain", "category", "name", "description")}})
     return c
 
 
@@ -196,7 +203,7 @@ def flag_behind_peers(results, tpl, thresholds=None, flag_on=None):
             if mid in r and r[mid].get("typical") is not None:
                 r[mid]["typical"] = typical
         gap = gaps.get(mid)
-        if (not flag_on or gap is None or hib[mid] is None or mid in measure.COUNT_ONLY or len(rows) < PEER_MIN_FAMILIES
+        if (not flag_on or gap is None or hib[mid] is None or mid in measure.PER_10_APPS or len(rows) < PEER_MIN_FAMILIES
                 or (thresholds.get(mid) or {}).get("basis") != "Policy"):
             continue
         for r in rows:
@@ -254,7 +261,7 @@ def expand_shared(counts, shared):
     """Per-family counts with each shared group's counts added to every family its lead leads (owner, 6 Nov 2026:
     a lead of several families rolls up to each of them; the same numbers show for each until the data is more
     granular). The firm keeps using the original counts, so the group is counted once there. A count-only metric
-    (UN-01) is a unique count: an item already in the family isn't counted twice."""
+    (UN-01) has a unique count: an incident already in the family isn't counted twice."""
     if not shared:
         return counts
     out = {}
@@ -265,7 +272,7 @@ def expand_shared(counts, shared):
                 continue
             for fid in fids:
                 fam[fid] = _merge(fam.get(fid), by_fam[g])
-                if mid in measure.COUNT_ONLY:
+                if mid in measure.PER_10_APPS:
                     seen, items = set(), []
                     for it in fam[fid].get("items") or []:
                         if it.get("id") not in seen:
@@ -292,9 +299,9 @@ def family_tiers(feeds):
     return out
 
 
-def _scored(results, tpl, weights, cfg):
+def _scored(results, tpl, cfg):
     """Blocks, TRUST and status for one set of metric results (a family's, or the firm's pooled ones)."""
-    blocks, trust, st, capped = scoring.family({"metrics": results}, tpl["metrics"], weights, cfg.get("caps"),
+    blocks, trust, st, capped = scoring.family({"metrics": results}, tpl["metrics"], cfg.get("caps"),
                                                cfg.get("coverage"))
     for B in blocks.values():
         B["delta"] = None
@@ -306,6 +313,7 @@ def _scored(results, tpl, weights, cfg):
 def score_month(mapped, cfg=None, tpl=None):
     """Score one mapped month. Returns the period block the front end reads, plus the family list."""
     cfg = cfg or thresholds_config()
+    auto_red = bool(cfg.get("automatic_red_rules", True))   # owner, 9 Nov 2026: off for now (setting)
     tpl = tpl or template()
     month = mapped["month"]
     feeds = mapped["feeds"]
@@ -357,27 +365,34 @@ def score_month(mapped, cfg=None, tpl=None):
                 results[fid][mid] = blank_result("DNR", blocked)
             continue
         counts = fcounts[mid]
-        if mid in measure.COUNT_ONLY:
-            # Owner, 3 Nov 2026: scored as a plain count against the prevailing median until app-level data
-            # allows "per 10 apps". A family with no Critical or SWE incident has a count of 0.
-            noun = measure.COUNT_ONLY[mid]
-            ns = {fid: (counts.get(fid) or {}).get("numerator", 0) for fid in fids}
-            t = thresholds_for(mid, [float(n) for n in ns.values()], hib, cfg, unit_word="incidents")
+        if mid in measure.PER_10_APPS:
+            # Owner, 9 Nov 2026: Critical and SWE incidents per 10 confirmed apps (app inventory), against the
+            # prevailing median of the families that had incidents. No incident = shown, not scored (Low confidence):
+            # a rate of 0 can't be scored with confidence. No apps = no rate.
+            ns = {fid: ((counts.get(fid) or {}).get("numerator", 0), (counts.get(fid) or {}).get("denominator", 0))
+                  for fid in fids}
+            rate = {fid: r1(10 * n / a) for fid, (n, a) in ns.items() if n and a}
+            t = thresholds_for(mid, list(rate.values()), hib, cfg, unit_word="per 10 apps")
             if t:
                 t["reason"] = t["reason"].replace("{month}", label(month))
                 thresholds[mid] = dict(green=t["green"], red=t["red"], version=1, basis=t["basis"], approved_at=None,
                                        reason=t["reason"], sets="both", provisional=t["provisional"], band=t.get("band"),
                                        set_from=t.get("set_from"), set_on=t.get("set_on"))
             for fid in fids:
-                n, un = ns[fid], (counts.get(fid) or {}).get("unrated", 0)
+                (n, a), un = ns[fid], (counts.get(fid) or {}).get("unrated", 0)
                 r = blank_result(None, None)
-                r.update(value=float(n), numerator=n, denominator=None, unrated=un)
-                if t is None:
-                    r.update(status="N/A", reason=no_threshold_reason(len(ns), cfg), points=None)
+                r.update(numerator=n, denominator=a, unrated=un)
+                if not a:
+                    r.update(status="N/A", reason=f"No confirmed apps in the app inventory for this family, so no rate "
+                                                  f"({plural(n, 'incident', 'incidents')}): not scored", points=None)
+                elif not n:
+                    r.update(value=0.0, status="Low confidence", points=None,
+                             reason="No Critical or SWE incidents this month: shown, not scored")
+                elif t is None:
+                    r.update(value=rate[fid], status="N/A", reason=no_threshold_reason(len(rate), cfg), points=None)
                 else:
-                    st, why = status_of(float(n), t, hib, "count")
-                    r.update(status=st, reason=f"{plural(n, measure.COUNT_ONE.get(mid, noun), noun)}: {why}",
-                             points=scoring.PTS[st], typical=t["green"])
+                    st, why = status_of(rate[fid], t, hib, m["unit"])
+                    r.update(value=rate[fid], status=st, reason=why, points=scoring.PTS[st], typical=t["green"])
                 if un:
                     r["reason"] += (f". Also {plural(un, 'incident', 'incidents')} with no rating (DEFCON Not "
                                     f"Available or blank): shown, not counted")
@@ -401,11 +416,9 @@ def score_month(mapped, cfg=None, tpl=None):
         for fid in fids:
             c = counts.get(fid)
             if not c or not c["denominator"]:
-                if mid == "UN-02":     # D-100: nothing open = Green
-                    r = blank_result("Green", "No postmortem actions open at month-end", numerator=0, denominator=0)
-                    r.update(value=0.0, points=100)
-                else:
-                    r = blank_result("N/A", empty_reason(mid, all_unplaced))
+                # Owner, 9 Nov 2026 (replaces D-100's "nothing open = Green"): nothing to count is not scored,
+                # UN-02 included, so a family with no open actions isn't shown as 100%.
+                r = blank_result("N/A", empty_reason(mid, all_unplaced))
                 results[fid][mid] = r
                 continue
             v = r1(100 * c["numerator"] / c["denominator"])
@@ -413,7 +426,7 @@ def score_month(mapped, cfg=None, tpl=None):
             r.update(value=v, numerator=c["numerator"], denominator=c["denominator"])
             if c["denominator"] < low:
                 r.update(status="Low confidence", reason=f"Fewer than {low} items: shown, not scored", points=None)
-            elif mid == "TE-02" and c.get("client_impact"):          # R-TCC-12: client impact -> Red
+            elif mid == "TE-02" and c.get("client_impact") and auto_red:   # R-TCC-12, when automatic Red rules are on
                 # Owner, 3 Nov 2026: an automatic Red rule, so it also caps the Releases block at 49.
                 r.update(status="Red", points=0, override=True,
                          reason=f"Automatic Red rule: {plural(c['client_impact'], 'release', 'releases')} with client impact")
@@ -454,7 +467,7 @@ def score_month(mapped, cfg=None, tpl=None):
     # 2. Building blocks and TRUST per family (scoring.py: points, caps, rounding).
     fam_out, trusts = {}, []
     for fid in fids:
-        fam_out[fid] = _scored(results[fid], tpl, scoring.weights_for(tpl, fid), cfg)
+        fam_out[fid] = _scored(results[fid], tpl, cfg)
         trusts.append(fam_out[fid]["trust"])
 
     # 3. Firm-wide: every row counts, placed or not.
@@ -473,11 +486,13 @@ def score_month(mapped, cfg=None, tpl=None):
             firm[mid] = dict(value=None, status="DNR", prior_value=None, prior_status=None)
             continue
         counts = meas["counts"][mid]
-        if mid in measure.COUNT_ONLY:
-            n = counts["_firm"]["numerator"]
-            firm_totals[mid] = float(n)
-            firm[mid] = dict(value=float(n), status="Info only", prior_value=None, prior_status=None, numerator=n,
-                             denominator=None)
+        if mid in measure.PER_10_APPS:
+            n, apps = counts["_firm"]["numerator"], counts["_firm"].get("apps", 0)
+            v = r1(10 * n / apps) if apps else None
+            st = ("N/A" if v is None else "Low confidence" if not n
+                  else status_of(v, thresholds[mid], m["higher_is_better"], m["unit"])[0] if mid in thresholds else "N/A")
+            firm_totals[mid] = v
+            firm[mid] = dict(value=v, status=st, prior_value=None, prior_status=None, numerator=n, denominator=apps)
             un = counts.get(UNATTRIBUTED, {}).get("numerator", 0)
             unplaced.setdefault(m["provider"], [0, 0])
             unplaced[m["provider"]][0] += un
@@ -509,7 +524,7 @@ def score_month(mapped, cfg=None, tpl=None):
 
     # Firm TRUST is scored from the pooled firm-wide results, the same way as a family (owner, 4 Nov 2026), not as
     # the average of the family scores. The average is kept beside it for comparison.
-    firm_scored = _scored(firm, tpl, {m["id"]: m.get("weight", 1) for m in tpl["metrics"]}, cfg)
+    firm_scored = _scored(firm, tpl, cfg)
 
     received_providers = {metrics[mid]["provider"] for mid in meas["received"]}
     dnr = sorted({m["provider"] for k, m in metrics.items() if k not in measure.COMING_SOON} - received_providers)
@@ -559,7 +574,6 @@ def score_month(mapped, cfg=None, tpl=None):
         submissions=submissions, firm_incomplete=firm_incomplete, files_needed=files_needed)
     period["caps"] = scoring.caps_from(cfg.get("caps"))       # the caps this month was scored with (a setting)
     period["coverage"] = scoring.coverage_from(cfg.get("coverage"), scoring.block_codes(tpl["metrics"]))   # and how much had to be measured (a setting)
-    period["count_only"] = {mid: unit for mid, unit in measure.COUNT_ONLY.items() if mid in meas["received"]}
     f1 = meas["counts"].get("UN-01", {}).get("_firm", {})
     notes = []
     if f1.get("no_end_date"):

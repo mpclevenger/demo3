@@ -34,6 +34,30 @@ def test_the_page_gets_every_metric_and_card():
     ids = list(config.metrics())
     assert [m["id"] for m in tpl["metrics"]] == ids and list(tpl["dictionary"]["metrics"]) == ids
     te01 = tpl["dictionary"]["metrics"]["TE-01"]
-    assert te01["limitations_table"] and te01["status"] == "Measured" and not te01.get("not_measured")
+    assert te01["status"] == "Measured" and not te01.get("not_measured") and "limitations_table" in te01
     un03 = tpl["dictionary"]["metrics"]["UN-03"]
     assert un03["not_measured"] and "UN-03" in measure.COMING_SOON
+
+
+def test_every_linked_risk_has_its_file():
+    """card.risks names risk files in config/risks/ (owner, 9 Nov 2026)."""
+    have = config.risks()
+    for mid, x in config.metrics().items():
+        for rid in x["card"].get("risks") or []:
+            assert rid in have, f"{mid}: no risk file config/risks/{rid}.yaml"
+
+
+def test_a_linked_risk_shows_its_name_and_description():
+    card = score_month.dictionary_card({"card": {"risks": ["external-data-breach-tool-use", "not-there"]}}, config.risks())
+    ok, gone = card["risks_detail"]
+    assert ok["name"] == "External data breach based on tool use" and ok["domain"] == "Cyber"
+    assert ok["category"] == "Unauthorized access" and ok["description"].startswith("Someone outside the firm")
+    assert gone == {"id": "not-there", "missing": True}
+
+
+def test_every_data_source_has_an_owner_entry():
+    """config/data_sources.json (owner, 9 Nov 2026): one section per feed, with an owner (blank until named)."""
+    from trust import store
+    ds = config.data_sources()
+    assert set(ds) == set(store.FEEDS), f"missing or unknown sources: {set(store.FEEDS) ^ set(ds)}"
+    assert all("owner" in x for x in ds.values())

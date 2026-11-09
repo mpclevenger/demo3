@@ -9,7 +9,8 @@ from trust import score_month  # noqa: E402
 
 def month_data(client):
     for feed, name in (("hr", "hr_firmwide.csv"), ("hr_mapping", "family_owners.csv"), ("tcc", "tcc_export.csv"),
-                       ("postmortems", "postmortems_export.csv"), ("actions", "actions_export.csv")):
+                       ("postmortems", "postmortems_export.csv"), ("actions", "actions_export.csv"),
+                       ("app_inventory", "app_inventory.csv")):
         up(client, feed, name)
     assert client.post("/api/update", json={"month": "2026-09", "by": "T"}, headers=H).status_code == 200
     return client.get("/data.json").json["periods"]["2026-09"]

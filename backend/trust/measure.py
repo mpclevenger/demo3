@@ -13,8 +13,8 @@ TE-01 (owner, 8 Nov 2026; was "approved before deployment"): the share of a fami
 through TCC, out of all its deployed changes (TCC + Non-TCC). It needs both change files, so a month without the
 Non-TCC file shows No data rather than a false 100%.
 
-UN-01 is a plain count for now (owner, 2 Nov 2026): there is no incidents file, so it is the unique
-Critical and SWE incident_ids in the postmortem file. Its dictionary rate is "per 10 apps", which needs the app inventory.
+UN-01 (owner, 9 Nov 2026) is unique Critical and SWE incident_ids in the postmortem file per 10 confirmed apps in the
+app inventory. A family with no incident is shown but not scored (Low confidence).
 
 Each result: {"numerator", "denominator", "items", **facts}. A family with no items gets
 denominator 0. Rows not placed with a family are counted under UNATTRIBUTED ("Not yet mapped").
@@ -50,9 +50,9 @@ RE01_TIERS = (0, 1)
 COMING_SOON = {mid: x.get("status_note") or f"{x.get('name', mid)}: coming soon."
                for mid, x in config.metrics().items() if x.get("status") == "Coming soon"}
 
-# Counted, not rated, until the app inventory gives the "per 10 apps" denominator: metric -> unit shown.
-COUNT_ONLY = {"UN-01": "Critical or SWE incidents"}
-COUNT_ONE = {"UN-01": "Critical or SWE incident"}     # the same unit, for a count of 1
+# Metrics whose numerator is a unique count (an incident in a shared group isn't counted twice in a family) and
+# whose denominator is the family's confirmed apps, as a rate per 10 apps (owner, 9 Nov 2026).
+PER_10_APPS = ("UN-01",)
 
 
 def month_end(month):
@@ -157,7 +157,7 @@ def un02(feeds, month):
 
 def un01(feeds, month):
     """Unique Critical and SWE incidents (incident_id) in the postmortem file that ended in the month
-    (New York), per family. Owner, 2 Nov 2026: no incidents file; use a unique count of incident_id,
+    (New York), per family, with the family's confirmed apps as the denominator (rate per 10 apps). Owner, 2 Nov 2026: no incidents file; use a unique count of incident_id,
     matching the file's risk criteria: Critical (DEFCON 3-5) and SWE (DEFCON 1-2). DEFCON 0 and
     "Not Available" (cannot determine) are not counted; the cannot-determine ones are listed.
 
@@ -192,8 +192,13 @@ def un01(feeds, month):
             r["numerator"] += 1
             r["items"].append({"id": inc, "class": v["risk_class"], "placed_by": v.get("placed_by"),
                                "ended": v.get("end_datetime")})
+    # Denominator (owner, 9 Nov 2026): the family's confirmed apps in the app inventory, as placed at mapping.
+    apps = ((feeds.get("app_inventory") or {}).get("placed") or {}).get("by_family") or {}
+    for fam, n in apps.items():
+        out[fam]["denominator"] = n
     out = dict(out)
-    out["_firm"] = {"numerator": len(firm), "no_end_date": sorted(no_date), "not_critical_or_swe": sorted(undetermined)}
+    out["_firm"] = {"numerator": len(firm), "apps": sum(apps.values()), "no_end_date": sorted(no_date),
+                    "not_critical_or_swe": sorted(undetermined)}
     return out
 
 

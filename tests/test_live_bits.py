@@ -28,11 +28,11 @@ def test_caps_are_settings():
     red = {"status": "Red", "override": True}
     green = {"status": "Green"}
     ms = [("TE-01", green), ("TE-02", red), ("TE-03", green), ("TE-04", green)]   # average 75
-    assert scoring.block(ms, {})[0]["score"] == 49                                # default automatic Red cap
-    assert scoring.block(ms, {}, {"automatic_red_block": 39})[0]["score"] == 39
+    assert scoring.block(ms)[0]["score"] == 49                                # default automatic Red cap
+    assert scoring.block(ms, {"automatic_red_block": 39})[0]["score"] == 39
     plain = [("TE-01", green), ("TE-02", {"status": "Red"}), *[(f"X{i}", green) for i in range(8)]]   # average 90
-    assert scoring.block(plain, {})[0]["score"] == 79
-    assert scoring.block(plain, {}, {"red_metric_block": 69})[0]["score"] == 69
+    assert scoring.block(plain)[0]["score"] == 79
+    assert scoring.block(plain, {"red_metric_block": 69})[0]["score"] == 69
     # nonsense values are ignored, so a typo can't break scoring
     assert scoring.caps_from({"automatic_red_block": "abc", "red_metric_block": 150, "x": 1}) == scoring.CAPS
 

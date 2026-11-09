@@ -160,3 +160,22 @@ def test_csv_cells_that_excel_would_run_are_quoted():
              "person": "@me", "team": "+t", "date_label": "", "date": "", "incident": "", "detail": "", "link": ""}]
     text = evidence.to_csv(rows, "2026-09", "Payments")
     assert "'=HYPERLINK" in text and ",'-1," in text and "'@me" in text and "'+t" in text and ",Yes," in text
+
+
+def test_the_site_shows_the_deployed_definitions_not_the_saved_copy(client):
+    """Owner, 8 Nov 2026: a definition changed in config/metrics.json shows once deployed, before any Update.
+    Scores stay as published until the month is updated."""
+    import json
+    from trust import storage
+    ready(client)
+    saved = json.loads(storage.published("data.json"))
+    old = saved["periods"]["2026-09"]["families"]["payments"]["metrics"]["TE-01"]
+    saved["dictionary"]["metrics"]["TE-01"] = {"definition": "an old write-up"}          # as saved by an earlier version
+    saved["metrics"] = [dict(m, name="Old name") if m["id"] == "TE-01" else m for m in saved["metrics"]]
+    storage.save_published({"data.json": json.dumps(saved), "index.html": "", "evidence.json": "{}"})
+    d = client.get("/data.json").json
+    card = d["dictionary"]["metrics"]["TE-01"]
+    assert "through TCC" in card["definition"] and card["wording"]["counts"]["verb_one"] == "went through TCC"
+    assert next(m for m in d["metrics"] if m["id"] == "TE-01")["name"] == "Change ticket adoption"
+    assert d["periods"]["2026-09"]["families"]["payments"]["metrics"]["TE-01"] == old     # results untouched
+    assert "through TCC" in client.get("/").get_data(as_text=True)

@@ -40,3 +40,30 @@ def metrics():
 def counting(mid):
     """The 'counting' part of one metric's definition ({} for a metric that isn't measured yet)."""
     return metrics().get(mid, {}).get("counting") or {}
+
+
+def risks_dir():
+    return pathlib.Path(os.environ.get("TRUST_RISKS")
+                        or pathlib.Path(__file__).resolve().parents[2] / "config" / "risks")
+
+
+def risks():
+    """The risk assessment engine's risks (owner, 9 Nov 2026): copies of its risk files in config/risks/, one YAML
+    file per risk, keyed by file name without .yaml. Metrics link to them in card.risks (config/metrics.json)."""
+    import yaml                                          # pyyaml; only needed here
+    out = {}
+    folder = risks_dir()
+    files = sorted(folder.glob("*.yaml")) + sorted(folder.glob("*.yml")) if folder.exists() else []
+    for f in files:
+        out[f.stem] = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+    return out
+
+
+def data_sources():
+    """Facts about each data source TRUST receives (config/data_sources.json, owner 9 Nov 2026): who owns it.
+    Keyed by feed id; keys starting with _ are notes."""
+    path = pathlib.Path(os.environ.get("TRUST_DATA_SOURCES")
+                        or pathlib.Path(__file__).resolve().parents[2] / "config" / "data_sources.json")
+    doc = loads_tolerant(path.read_text(encoding="utf-8")) or {} if path.exists() else {}
+    return {k: {f: v for f, v in (x or {}).items() if not f.startswith("_")}
+            for k, x in (doc.get("sources") or {}).items() if not k.startswith("_")}

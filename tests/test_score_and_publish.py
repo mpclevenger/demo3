@@ -11,7 +11,8 @@ from trust import __main__ as cli, mapping, publish, score_month, store  # noqa:
 FIX = pathlib.Path(__file__).parent / "fixtures"
 ALL = (("hr", "hr_firmwide.csv"), ("hr_mapping", "family_owners.csv"), ("tcc", "tcc_export.csv"),
        ("ntcc", "ntcc_export.csv"), ("actions", "actions_export.csv"), ("postmortems", "postmortems_export.csv"),
-       ("cx_sast", "final_checkmarx_sast_report.json"), ("cx_sca", "final_checkmarx_sca_report 1.json"))
+       ("cx_sast", "final_checkmarx_sast_report.json"), ("cx_sca", "final_checkmarx_sca_report 1.json"),
+       ("app_inventory", "app_inventory.csv"))          # UN-01's denominator (owner, 9 Nov 2026)
 
 
 @pytest.fixture
@@ -36,26 +37,24 @@ def test_counts_statuses_and_scores(tmp_store):
     assert (pay["TE-01"]["numerator"], pay["TE-01"]["denominator"]) == (2, 3)
     # prevailing median: only 2 families have a result here and 5 are needed, so no tolerance threshold yet
     assert pay["TE-01"]["status"] == "N/A" and "No tolerance threshold yet" in pay["TE-01"]["reason"]
-    assert pay["TE-02"]["status"] == "Red"                      # a release with client impact
-    assert pay["TE-02"]["override"] and "client impact" in pay["TE-02"]["reason"]   # automatic Red rule (owner, 3 Nov)
-    # Nothing open = Green (D-100); 1-2 items = Low confidence, not scored
-    assert p["families"]["lending"]["metrics"]["UN-02"]["status"] == "Green"
+    # Automatic Red rules are off (owner, 9 Nov 2026): client impact no longer forces Red; too few families for a median
+    assert pay["TE-02"]["status"] == "N/A" and not pay["TE-02"]["override"]
+    # Nothing open is not scored (owner, 9 Nov 2026; was Green under D-100); 1-2 items = Low confidence, not scored
+    assert p["families"]["lending"]["metrics"]["UN-02"]["status"] == "N/A"
+    assert "No postmortem actions open" in p["families"]["lending"]["metrics"]["UN-02"]["reason"]
     assert pay["UN-02"]["status"] == "Low confidence"
     # Checkmarx: repos reach a family only through a matching GitHub repo (none loaded here), so not scored; firm still counts
     assert pay["SE-01"]["status"] == "N/A" and "matching GitHub repo" in pay["SE-01"]["reason"]
     assert p["firm_totals"]["SE-01"] == 66.7 and p["unattributed_pct"]["Cyber"] == 100.0
     # Feeds not received are No data and left out
     assert pay["TR-01"]["status"] == "DNR" and "Arch" in p["dnr"]
-    # Blocks come from scoring.py: TE-01 isn't scored here, so the block is TE-02 alone: Red, 0 points
-    assert p["families"]["payments"]["blocks"]["REL"]["score"] == 0
-    # Owner, 4 Nov 2026: TRUST from any scored block (setting "coverage"), so one block is enough
-    assert p["families"]["payments"]["trust"] == 0 and p["families"]["payments"]["blocks_scored"] == 1
+    # Neither TE metric is scored here, so Releases has no score and Payments has no TRUST score
+    assert p["families"]["payments"]["blocks"]["REL"]["score"] is None and p["families"]["payments"]["trust"] is None
     assert p["coverage"] == {"block_min_share": 0, "trust_min_blocks": 1}
     # Firm TRUST is scored from the pooled firm-wide results, not averaged from the families (owner, 4 Nov 2026):
-    # TE-01 has no tolerance threshold yet, and TE-02's automatic Red rule (client impact in one family) holds for the firm
-    assert p["firm"]["TE-01"]["status"] == "N/A" and p["firm"]["TE-02"]["status"] == "Red" and p["firm"]["TE-02"]["override"]
-    assert p["firm_blocks"]["REL"]["score"] == 0 and p["firm_trust"] == 0 and p["firm_status"] == "Red"
-    assert p["firm_trust_average"] == 67                       # the old rule, kept beside it for comparison
+    # No tolerance threshold for either TE metric yet, and no automatic Red rule, so the firm has no TRUST score
+    assert p["firm"]["TE-01"]["status"] == "N/A" and p["firm"]["TE-02"]["status"] == "N/A" and not p["firm"]["TE-02"].get("override")
+    assert p["firm_blocks"]["REL"]["score"] is None and p["firm_trust"] is None
     # A result's 'provisional' means "carried over" in the front end; never set here
     assert not any(r["provisional"] for f in p["families"].values() for r in f["metrics"].values())
     # Mapping notes reach the Data sources page as {rule, detail}, each rule unique within its file
@@ -93,7 +92,7 @@ def test_second_month_gets_prior_values_and_watch_list(tmp_store):
     score_month.run("2026-10")
     d = publish.build()
     te02 = d["periods"]["2026-10"]["families"]["payments"]["metrics"]["TE-02"]
-    assert te02["prior_status"] == "Red" and te02["history"] == ["Red", te02["status"]]
+    assert te02["prior_status"] == "N/A" and te02["history"] == ["N/A", te02["status"]]
     assert d["trend"]["months"] == ["2026-09", "2026-10"]
 
 
@@ -119,11 +118,15 @@ def test_un01_unique_incidents_and_un03_coming_soon(tmp_store):
     assert p["firm"]["UN-01"]["numerator"] == 1
     assert any("INC-D" in n for n in p.get("notes", []))
     assert any("INC-C" in n and "neither Critical nor SWE" in n for n in p.get("notes", []))
-    # Owner, 3 Nov 2026: scored as a count against the prevailing median of the month. Owner, 4 Nov 2026:
-    # only with at least 5 families; this test month has 4, so no threshold yet and not scored (count still shown)
+    # Owner, 9 Nov 2026: per 10 confirmed apps in the app inventory (Payments 5 apps, Cards 2), against the prevailing
+    # median; only with at least 5 families, so no threshold in this 4-family month and not scored (rate still shown)
+    assert (fam["payments"]["metrics"]["UN-01"]["denominator"], fam["payments"]["metrics"]["UN-01"]["value"]) == (5, 2.0)
+    assert fam["cards"]["metrics"]["UN-01"]["value"] == 5.0
     assert "UN-01" not in p["thresholds"]
     assert fam["payments"]["metrics"]["UN-01"]["status"] == "N/A" and "5 are needed" in fam["payments"]["metrics"]["UN-01"]["reason"]
-    assert fam["lending"]["metrics"]["UN-01"]["value"] == 0
+    # A family with no confirmed apps has no rate
+    assert fam["lending"]["metrics"]["UN-01"]["value"] is None and "No confirmed apps" in fam["lending"]["metrics"]["UN-01"]["reason"]
+    assert (p["firm"]["UN-01"]["numerator"], p["firm"]["UN-01"]["denominator"], p["firm"]["UN-01"]["value"]) == (1, 7, 1.4)
     # UN-03: Coming soon everywhere; not counted as missing data and not in the block
     assert fam["payments"]["metrics"]["UN-03"]["status"] == "Coming soon"
     assert p["firm"]["UN-03"]["status"] == "Coming soon"
@@ -131,14 +134,14 @@ def test_un01_unique_incidents_and_un03_coming_soon(tmp_store):
     assert fam["payments"]["blocks"]["STA"]["missing"] == 0
     d = publish.build()
     ms = {m["id"]: m for m in d["metrics"]}
-    assert ms["UN-01"]["unit"] == "Critical or SWE incidents" and ms["UN-03"].get("coming_soon") is True
+    assert ms["UN-01"]["unit"] == "per 10 apps" and ms["UN-03"].get("coming_soon") is True
 
 
 def test_un01_with_only_the_postmortem_file(tmp_store):
     feeds = (("hr", "hr_firmwide.csv"), ("hr_mapping", "family_owners.csv"), ("postmortems", "postmortems_export.csv"))
     p = load("2026-09", feeds)["period"]
-    assert p["families"]["cards"]["metrics"]["UN-01"]["numerator"] == 0     # INC-C is not Critical/SWE
-    assert p["firm"]["UN-01"]["numerator"] == 1                              # INC-A, not placed: Not yet mapped
+    # UN-01 needs the app inventory too (its denominator, owner 9 Nov 2026), so without it: No data
+    assert p["families"]["cards"]["metrics"]["UN-01"]["status"] == "DNR" and p["firm"]["UN-01"]["status"] == "DNR"
     assert p["families"]["cards"]["metrics"]["UN-02"]["status"] == "DNR"     # no action file
 
 
@@ -154,7 +157,7 @@ def test_te02_release_counts_when_its_7_day_window_ends(tmp_store):
     sep = score_month.run("2026-09")["period"]["families"]["payments"]["metrics"]["TE-02"]
     octo = score_month.run("2026-10")["period"]["families"]["payments"]["metrics"]["TE-02"]
     assert sep["status"] == "N/A"                       # nothing whose window closed in September
-    assert octo["denominator"] >= 1 and octo["status"] == "Red"   # 1004 (client impact) now in October
+    assert octo["denominator"] >= 1                     # 1004 now counts in October
 
 
 def test_unrated_incidents_are_shown_but_not_scored(tmp_store):
@@ -208,8 +211,35 @@ def test_coverage_setting_can_go_back_to_the_original_rules(tmp_store, monkeypat
     import json
     cfg = json.loads((pathlib.Path(__file__).resolve().parents[1] / "config" / "thresholds.json").read_text())
     cfg["coverage"] = {"block_min_share": 0.5, "trust_min_blocks": 3}
+    cfg["automatic_red_rules"] = True                                       # so Releases has a score to test with
     (tmp_store / "t.json").write_text(json.dumps(cfg))
     monkeypatch.setenv("TRUST_THRESHOLDS", str(tmp_store / "t.json"))
     p = load("2026-09")["period"]
     assert p["families"]["payments"]["trust"] is None and p["families"]["payments"]["status"] == "Insufficient data"
     assert p["families"]["payments"]["blocks"]["REL"]["score"] == 0        # the block itself still scores
+
+
+def test_automatic_red_rules_can_be_switched_back_on(tmp_store, monkeypatch):
+    """Setting automatic_red_rules (owner, 9 Nov 2026: off for now). On: client impact makes TE-02 Red, caps
+    Releases at 49 (here 0, its only metric) and holds for the firm."""
+    import json
+    cfg = json.loads((pathlib.Path(__file__).resolve().parents[1] / "config" / "thresholds.json").read_text())
+    cfg["automatic_red_rules"] = True
+    (tmp_store / "t.json").write_text(json.dumps(cfg))
+    monkeypatch.setenv("TRUST_THRESHOLDS", str(tmp_store / "t.json"))
+    p = load("2026-09")["period"]
+    pay = p["families"]["payments"]["metrics"]["TE-02"]
+    assert pay["status"] == "Red" and pay["override"] and "client impact" in pay["reason"]
+    assert p["families"]["payments"]["blocks"]["REL"]["score"] == 0
+    assert p["firm"]["TE-02"]["status"] == "Red" and p["firm"]["TE-02"]["override"]
+
+
+def test_un01_no_incidents_is_shown_not_scored(tmp_store):
+    """Owner, 9 Nov 2026: a family with confirmed apps but no Critical or SWE incident shows 0, not scored."""
+    raw = (FIX / "postmortems_export.csv").read_bytes().replace(b",Critical/SWE,3,critical,", b",Critical/SWE,0,critical,")
+    for feed, name in ALL:
+        store.upload(feed, "2026-09", raw if feed == "postmortems" else (FIX / name).read_bytes(), name, "Tester")
+    mapping.map_month("2026-09")
+    pay = score_month.run("2026-09")["period"]["families"]["payments"]["metrics"]["UN-01"]
+    assert (pay["value"], pay["status"], pay["points"]) == (0.0, "Low confidence", None)
+    assert "No Critical or SWE incidents" in pay["reason"]

@@ -3,7 +3,7 @@
 
 Rules (docs/wiki/scoring-rules.md):
   - Points: Green 100, Amber 50, Red 0.
-  - A block is the weighted average of its scored metrics (weights 1-3, default 1, D-58),
+  - A block is the plain average of its scored metrics (owner, 9 Nov 2026: no weights),
     rounded to a whole number, half up (Decimal, ROUND_HALF_UP, D-04).
   - 'Info only' and 'Not Tier 0/1' are not applicable. 'DNR' (data not received) is left out
     and counted as missing (D-76). Other non-scored statuses ('N/A', 'Low confidence', ...)
@@ -74,7 +74,7 @@ def band(s):
     return 'Green' if s >= 80 else 'Amber' if s >= 50 else 'Red'
 
 
-def block(ms, weights, caps=None, coverage=None):
+def block(ms, caps=None, coverage=None):
     """Score one block. ms: list of (metric_id, metric_result). Returns (block_dict, mean or None)."""
     app = [(k, m) for k, m in ms if m['status'] not in NOT_APPLICABLE]
     miss = sum(1 for k, m in app if m['status'] == 'DNR')      # D-76: not received -> left out, flagged "x of y metrics"
@@ -93,9 +93,7 @@ def block(ms, weights, caps=None, coverage=None):
     if not sc or D(len(sc)) / D(len(rec)) < share:  # coverage counted on what arrived (D-76)
         return dict(base, score=None, status='Insufficient data'), None
 
-    # Weighted average; coverage above is counted in metrics, not weight.
-    w = {k: weights.get(k, 1) for k, m in sc}
-    mean = D(sum(PTS[m['status']] * w[k] for k, m in sc)) / D(sum(w.values()))
+    mean = D(sum(PTS[m['status']] for k, m in sc)) / D(len(sc))
     s = q(mean)
     cap, c = False, caps_from(caps)
     a, r = c['automatic_red_block'], c['red_metric_block']
@@ -106,7 +104,7 @@ def block(ms, weights, caps=None, coverage=None):
     return dict(base, score=s, status=band(s), capped=cap), mean
 
 
-def family(fr, metrics, weights, caps=None, coverage=None):
+def family(fr, metrics, caps=None, coverage=None):
     """Score one family-month (or the firm, from its pooled results). fr: {'metrics': {id: result}}; metrics: the
     template's metric list, each with its 'block'.
 
@@ -118,7 +116,7 @@ def family(fr, metrics, weights, caps=None, coverage=None):
     for B in codes:
         ms = [(m['id'], fr['metrics'][m['id']]) for m in metrics
               if m.get('block') == B and m['id'] in fr['metrics']]
-        r, mn = block(ms, weights, caps, coverage)
+        r, mn = block(ms, caps, coverage)
         out[B] = r
         if mn is not None:
             means.append(mn)
@@ -130,15 +128,6 @@ def family(fr, metrics, weights, caps=None, coverage=None):
     if any(r['status'] == 'Red' for r in out.values()) and t > tc:
         t, cap = tc, True
     return out, t, band(t), cap
-
-
-def weights_for(data, fid):
-    """Metric weights for one family: metrics[].weight (default 1) plus the family's weight_overrides."""
-    w = {m['id']: m.get('weight', 1) for m in data['metrics']}
-    wo = data.get('weight_overrides', {})
-    if isinstance(wo, dict):
-        w.update(wo.get(fid, {}))
-    return w
 
 
 def average_trust(trusts):

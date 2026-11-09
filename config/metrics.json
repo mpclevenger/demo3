@@ -1,11 +1,12 @@
 {
   "_how_to": [
-    "One section per metric. This file is where a metric's name, wording, dictionary card and known limits live.",
-    "Known limits: one line each, {\"limit\": ..., \"mitigation\": ..., \"status\": ...}. Status is usually Mitigated, Partly mitigated, Planned or No mitigation yet. Add a line to add a limit; delete the line to remove it.",
-    "card = the dictionary card (Risk it watches, population, time basis and so on). wording = the plain-language phrases the pages use. counting = which files the metric needs and how its items are described; the counting itself is the metric's function in backend/trust/measure.py (named under code).",
+    "One section per metric. This file is where a metric's name, wording, dictionary card and known limitations live.",
+    "Known limitations: one line each, {\"limit\": \"...\", \"mitigation\": \"...\", \"status\": \"...\"}. Status is usually Mitigated, Partly mitigated or No mitigation yet. Add a line to add one; delete the line to remove it. An empty list hides the section on the card.",
+    "Risk it watches: card.risks lists the risk files it watches, by file name without .yaml (e.g. \"external-data-breach-tool-use\"). The files are copies of the risk assessment engine's risk files, kept in config/risks/. With none listed, the card shows card.risk as text.",
+    "When it counts: card.time_text, one plain sentence.",
     "status: Measured (counted and scored), In progress (being built; not scored yet), Planned (designed, no data source yet) or Coming soon (no source agreed). Anything but Measured counts in no score and shows as No data.",
-  "Tolerance thresholds stay in config/thresholds.json.",
-    "After an edit: run the tests (python -m pytest -q tests), deploy, then update the month. Locked months keep their numbers; wording shows as edited.",
+    "Tolerance thresholds stay in config/thresholds.json.",
+    "After an edit: run the tests (python -m pytest -q tests), then deploy. Wording, cards, limitations, risks and status show once deployed; a change to how a metric is counted shows after Update the scorecard for each month.",
     "Keys starting with _ are notes and are ignored."
   ],
   "metrics": {
@@ -21,7 +22,6 @@
       "numerator_label": "Active repos linked to a confirmed app",
       "denominator_label": "Active repos",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "GitHub Enterprise Server + app inventory",
         "definition": "Share of a family's active repos linked to at least one confirmed app in the app inventory (through the inventory's service repo). A repo shared by several apps counts.",
@@ -31,8 +31,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end: the repos and apps in that month's files.",
         "open_items": [
           {
             "id": "OD-31",
@@ -46,13 +45,10 @@
         "population": "Active repositories placed with the family through their owner, as for TR-02.",
         "exclusions_text": "Archived repositories and forks. Applications whose status isn't 'confirmed' don't link a repository.",
         "proposed_fields": ["Population"],
-        "allowance_what": "repos not linked to an app"
+        "allowance_what": "repos not linked to an app",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "The inventory's service repo may be written differently from the GitHub repo name.", "mitigation": "A close spelling is accepted (setting app_repo_match_min) and every close match is listed with its score on Data sources.", "status": "Mitigated"},
-        {"limit": "Only confirmed applications link a repository, so a placeholder or retired application doesn't count.", "mitigation": "Applications with any other app_status are left out (setting app_active_statuses).", "status": "Mitigated"},
-        {"limit": "Archiving repositories shrinks the denominator.", "mitigation": "Information counts show repositories archived and created in the month.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "active repo", "noun_many": "active repos", "verb_one": "is not mapped to an app", "verb_many": "are not mapped to an app"},
         "counts": {"den_one": "active repo", "den_many": "active repos", "verb_one": "is mapped to an app", "verb_many": "are mapped to an app"},
@@ -85,7 +81,6 @@
       "numerator_label": "Hygiene checks passed",
       "denominator_label": "Hygiene checks possible (5 per active repo)",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "GitHub Enterprise Server",
         "definition": "Share of the five hygiene checks passed across a family's active repos. Each repo scores the checks it passes out of 5 (4 of 5 = 80%); the family's result is all checks passed ÷ all checks possible, which is the same as the average repo score.",
@@ -95,8 +90,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end: each active repo's settings in that month's GitHub file.",
         "open_items": [
           {
             "id": "OD-10",
@@ -142,14 +136,10 @@
         "population": "Active repositories placed with the family through their owner (the human with the most of the last 20 commits, matched in HR).",
         "exclusions_text": "Archived repos, forks and repos with no activity in 90 days; bots are never owners.",
         "allowance_what": "hygiene checks not passed",
-        "info_checks": ["CODEOWNERS file present", "Required status checks", "Stale approvals dismissed on new commits"]
+        "info_checks": ["CODEOWNERS file present", "Required status checks", "Stale approvals dismissed on new commits"],
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "The checks read configuration only, so a required review can still be approved without real scrutiny.", "mitigation": "Suggested: Tech Risk samples merged pull requests each quarter and reports how many had a substantive review.", "status": "Planned"},
-        {"limit": "Settings are read when the export runs, so protection relaxed and restored during the month is not seen.", "mitigation": "Suggested: use the platform's settings-change log to report protection removed at any point in the month.", "status": "Planned"},
-        {"limit": "Partial credit can hide a repo with no main-branch protection at all.", "mitigation": "Each repo's item on the family page says '4 of 5 checks' and which checks fail, and names repos whose main branch isn't protected (not the CTO view).", "status": "Mitigated"},
-        {"limit": "Ownership follows who made most of the last 20 commits, so heavy shared work by one person can move repos to their family.", "mitigation": "Bots are skipped, one-off commits by others don't change the owner, and anyone owning 20 or more active repos is listed for a check.", "status": "Mitigated"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "active repo", "noun_many": "active repos", "verb_one": "fails a hygiene check", "verb_many": "fail a hygiene check"},
         "counts": {"den_one": "active repo", "den_many": "active repos", "verb_one": "passes every hygiene check", "verb_many": "pass every hygiene check"}
@@ -178,7 +168,6 @@
       "numerator_label": "Apps confirmed by owner this cycle",
       "denominator_label": "Active / in-build apps",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "App inventory",
         "definition": "Share of owned apps whose named owner confirmed the inventory record within the current cycle.",
@@ -188,8 +177,7 @@
         "peer_flag_gap": 15.0,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-12",
@@ -212,12 +200,10 @@
         "risk": "If the application inventory is wrong, tiering, SOX scoping and per-application counts are wrong too. Owner confirmation is what keeps the inventory reliable.",
         "population": "Active or in-build applications owned by the family in the month-end inventory snapshot, counted as confirmed when the named owner has confirmed the record within the current cycle.",
         "exclusions_text": "Decommissioned applications (counted as information only).",
-        "allowance_what": "not yet confirmed"
+        "allowance_what": "not yet confirmed",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "A confirmation can be a single click with no review.", "mitigation": "Architecture spot-checks confirmations and the sample result is shown as information.", "status": "Planned"},
-        {"limit": "Marking an application decommissioned removes it from the denominator.", "mitigation": "Information counts show applications decommissioned and applications that changed owner.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "app", "noun_many": "apps", "verb_one": "is not confirmed by its owner", "verb_many": "are not confirmed by their owner"},
         "counts": {"den_one": "app", "den_many": "apps", "verb_one": "is confirmed by its owner", "verb_many": "are confirmed by their owners"}
@@ -235,7 +221,6 @@
       "numerator_label": "Datasets used that have a named owner in the data inventory",
       "denominator_label": "Datasets used by the family",
       "override_rule": null,
-      "weight": 1,
       "risk_category": "Data",
       "card": {
         "source_system": "Data inventory (source to be confirmed with the owner)",
@@ -246,8 +231,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-40",
@@ -267,13 +251,10 @@
         "exclusions_text": "Datasets retired in the month (counted as information only).",
         "allowance_what": "without a named owner",
         "proposed_fields": ["Population"],
-        "risk_category": "Data"
+        "risk_category": "Data",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "The inventory can name an owner who has left or moved.", "mitigation": "The owner must be a current person in HR; otherwise the dataset counts as unowned.", "status": "Planned"},
-        {"limit": "A family can leave datasets off its list to shrink the denominator.", "mitigation": "Tech Risk samples applications against the list; information counts show datasets added and retired.", "status": "Planned"},
-        {"limit": "'Uses' needs a clear rule.", "mitigation": "OD-40 settles read, write or both before the first month is scored.", "status": "Planned"}
-      ]
+      "known_limits": []
     },
     "RE-01": {
       "name": "Tier 0/1 DR test completed (12 months)",
@@ -287,7 +268,6 @@
       "numerator_label": "Tier 0/1 apps with a completed DR test in 12 months",
       "denominator_label": "Tier 0/1 apps in the ITDR application file",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "ITDR application file and DR tests file",
         "definition": "Share of Tier 0 and Tier 1 applications in the ITDR application file with a completed DR test in the last 12 months (the date in the DR tests file's Comments). Tabletop exercises don't count.",
@@ -297,8 +277,7 @@
         "peer_flag_gap": 15.0,
         "tier01_only": true,
         "time_basis": "snapshot",
-        "time_text": "12 months to month-end: a DR test counts when the date in its Comments falls in the 12 months before the end of the month",
-        "time_note": "Every Tier 0/1 application needs a DR test each 12 months; the window moves with the month.",
+        "time_text": "As at month-end: a DR test counts if it was completed in the 12 months before.",
         "open_items": [
           {
             "id": "OD-31",
@@ -315,13 +294,10 @@
         "risk_monitored": "Critical apps haven't proved they can be recovered.",
         "risk": "If a Tier 0 or 1 application hasn't completed a DR test in the last year, there is no recent evidence it can be recovered within its objectives in a real event.",
         "population": "Applications at Recovery Tier 0 or 1 in the ITDR application file, placed with the family through their Business Product Area.",
-        "exclusions_text": "Tabletop exercises, tests not performed (blank Status), DR tests with no completion date in their Comments, and applications at Tier 2 to 5, TBC or with no tier."
+        "exclusions_text": "Tabletop exercises, tests not performed (blank Status), DR tests with no completion date in their Comments, and applications at Tier 2 to 5, TBC or with no tier.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Status Successful and the Comments date are taken as given; the file doesn't say whether RTO and RPO were met.", "mitigation": "None yet: needs an RTO/RPO result in the DR tests file.", "status": "No mitigation yet"},
-        {"limit": "A DR test with no date in its Comments can't be counted.", "mitigation": "The DR tests upload lists every successful DR test with no date in its Comments.", "status": "Mitigated"},
-        {"limit": "An application whose name differs between the two files can't be linked, so it shows as not tested.", "mitigation": "The mapping result lists every DR test whose application isn't in the ITDR file by name.", "status": "Mitigated"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "Tier 0/1 app",
@@ -363,7 +339,6 @@
       "numerator_label": "Tier 0/1 apps with a current test plan",
       "denominator_label": "Tier 0/1 apps",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "ITDR register",
         "definition": "Share of Tier 0/1 apps with a documented, approved resiliency/DR test plan.",
@@ -373,8 +348,7 @@
         "peer_flag_gap": 15.0,
         "tier01_only": true,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-14",
@@ -391,11 +365,10 @@
         "risk_monitored": "Critical apps cannot show how they would be recovered.",
         "risk": "A critical application with no documented recovery test plan cannot show how it would be recovered, or that it could meet its RTO/RPO.",
         "population": "Tier 0/1 applications with a documented, approved and current resiliency/DR test plan at month-end.",
-        "exclusions_text": "Applications that are not Tier 0/1."
+        "exclusions_text": "Applications that are not Tier 0/1.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "A plan can exist on paper without ever being exercised.", "mitigation": "RE-03 measures whether tests are actually passed, and an information count shows plans not reviewed in more than 12 months.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "Tier 0/1 app", "noun_many": "Tier 0/1 apps", "verb_one": "has no current test plan", "verb_many": "have no current test plan"},
         "counts": {"den_one": "Tier 0/1 app", "den_many": "Tier 0/1 apps", "verb_one": "has a current test plan", "verb_many": "have a current test plan"}
@@ -413,7 +386,6 @@
       "numerator_label": "Tier 0-2 apps with a successful DR test or tabletop in 12 months",
       "denominator_label": "Tier 0-2 apps in the ITDR application file",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "ITDR application file and DR tests file",
         "definition": "Share of Tier 0, 1 and 2 applications in the ITDR application file with a successful DR test or tabletop exercise in the last 12 months.",
@@ -423,8 +395,7 @@
         "peer_flag_gap": 15.0,
         "tier01_only": true,
         "time_basis": "snapshot",
-        "time_text": "12 months to month-end: a test counts when its date falls in the 12 months before the end of the month",
-        "time_note": "Every application needs a test each 12 months; the window moves with the month.",
+        "time_text": "As at month-end: a test counts if it was done in the 12 months before.",
         "open_items": [
           {
             "id": "OD-15",
@@ -441,13 +412,10 @@
         "risk_monitored": "Critical apps cannot be recovered within their RTO/RPO.",
         "risk": "A successful recovery test is the only evidence that a critical application can be recovered within its agreed objectives. Without one, we cannot be sure recovery would work in a real event.",
         "population": "Applications at Recovery Tier 0, 1 or 2 in the ITDR application file, placed with the family through their Business Product Area.",
-        "exclusions_text": "Applications at Tier 3 to 5, TBC or with no tier; tests not performed (blank Status); tests whose application name isn't in the ITDR application file."
+        "exclusions_text": "Applications at Tier 3 to 5, TBC or with no tier; tests not performed (blank Status); tests whose application name isn't in the ITDR application file.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "A tabletop exercise counts the same as a full DR test.", "mitigation": "Each application's item says whether its test was a DR test or a tabletop exercise.", "status": "Mitigated"},
-        {"limit": "Status Successful is taken as given; the file doesn't say whether RTO and RPO were met.", "mitigation": "None yet: needs an RTO/RPO result in the DR tests file.", "status": "No mitigation yet"},
-        {"limit": "An application whose name differs between the two files can't be linked, so it shows as not tested.", "mitigation": "The mapping result lists every DR test whose application isn't in the ITDR file by name.", "status": "Mitigated"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "Tier 0–2 app",
@@ -484,22 +452,20 @@
       "unit": "per 10 apps",
       "higher_is_better": false,
       "scored": true,
-      "definition": "Number of unique Critical and SWE incidents that ended in the month.",
+      "definition": "Critical and SWE incidents that ended in the month, per 10 of the family's confirmed apps.",
       "numerator_label": "Critical and SWE incidents (unique)",
-      "denominator_label": "Production apps (when the app inventory arrives)",
+      "denominator_label": "Confirmed apps in the app inventory",
       "override_rule": null,
-      "weight": 1,
       "card": {
-        "source_system": "Incident management portal (postmortem export)",
-        "definition": "Number of unique Critical and SWE incidents that ended in the month.",
+        "source_system": "Incident management portal (postmortem file) and app inventory",
+        "definition": "Critical and SWE incidents that ended in the month, per 10 of the family's confirmed apps.",
         "min_pop": 1,
         "zero_rule": "NA",
         "rolling_months": 1,
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "flow",
-        "time_text": "Flow during the month: incidents counted by when they ended (end_datetime)",
-        "time_note": "end_datetime is the only date in the postmortem export; an incident with no end time is listed, not counted. An incident with actions in several families counts once in each, and once firm-wide.",
+        "time_text": "In the month the incident ended.",
         "open_items": [
           {
             "id": "OD-16",
@@ -520,36 +486,33 @@
         "indicator_type": "KPI",
         "risk_monitored": "Clients suffer outages or serious degradation.",
         "risk": "Critical and SWE incidents are the most direct sign that clients have felt an outage or serious degradation of service.",
-        "population": "Unique incidents (incident_id) in the postmortem file rated Critical (DEFCON 3-5) or SWE (DEFCON 1-2) that ended in the month, placed with families through their postmortem action assignees, or the people named on the postmortem.",
-        "exclusions_text": "DEFCON 0 (false alarm, duplicate, awareness). Incidents whose DEFCON is Not Available (cannot determine) or blank are not counted; they are listed for follow-up.",
-        "zero_text": "No Critical or SWE incident: a count of 0, scored like any other count."
+        "population": "Unique incidents in the postmortem file rated Critical (DEFCON 3-5) or SWE (DEFCON 1-2) that ended in the month, placed with families through their postmortem action assignees, or the people named on the postmortem. Divided by the family's confirmed apps in the app inventory, per 10 apps.",
+        "exclusions_text": "DEFCON 0 (false alarm, duplicate, awareness). Incidents whose DEFCON is Not Available or blank, and incidents with no end date, are listed, not counted.",
+        "zero_text": "No Critical or SWE incident: shown as 0 but not scored, because a rate of 0 can't be scored with confidence. It is left out of the median. A family with no confirmed apps has no rate and isn't scored.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "A plain count is harder on large families, which run more apps.", "mitigation": "Temporary (owner, 3 Nov 2026): becomes a rate per 10 apps when the app inventory arrives.", "status": "Partly mitigated"},
-        {"limit": "An incident's rating can be lowered.", "mitigation": "Ratings come from the incident process. There is no count of lowered ratings yet.", "status": "Partly mitigated"},
-        {"limit": "Several incidents can be merged into one.", "mitigation": "None yet. There is no count of merged incidents.", "status": "No mitigation yet"},
-        {"limit": "An incident with no rating or no end time can't be counted.", "mitigation": "Listed for follow-up, not hidden.", "status": "Partly mitigated"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "rate": true,
-          "noun_one": "severe incident",
-          "noun_many": "severe incidents",
-          "verb_one": "in the last 3 months across",
-          "verb_many": "in the last 3 months across",
-          "den_noun": "production app-months",
+          "noun_one": "Critical or SWE incident",
+          "noun_many": "Critical or SWE incidents",
+          "verb_one": "across",
+          "verb_many": "across",
+          "den_noun": "confirmed apps",
           "fewer": "incidents"
         },
-        "counts": {"num_one": "severe incident", "num_many": "severe incidents", "join": "across", "den_one": "production app-month", "den_many": "production app-months"}
+        "counts": {"num_one": "Critical or SWE incident", "num_many": "Critical or SWE incidents", "join": "across", "den_one": "confirmed app", "den_many": "confirmed apps"}
       },
       "counting": {
-        "files": ["postmortems"],
+        "files": ["postmortems", "app_inventory"],
         "item_type": "incident",
         "items_name": "Critical and SWE incidents",
         "code": [
           {"file": "measure.py", "function": "un01", "what": "Counts Critical and SWE incidents that ended in the month"},
           {"file": "linking.py", "function": "link_actions_to_incidents", "what": "Links incidents to families through their actions"}
-        ]
+        ],
+        "empty_reason": "No confirmed apps in the app inventory for this family: not scored"
       }
     },
     "UN-02": {
@@ -564,9 +527,8 @@
       "numerator_label": "Postmortem actions overdue",
       "denominator_label": "Postmortem actions open at month-end",
       "override_rule": null,
-      "weight": 1,
       "card": {
-        "source_system": "Incident mgmt tool",
+        "source_system": "Incident management portal (action items and postmortem files)",
         "definition": "Share of open postmortem actions whose due date passed before month-end.",
         "min_pop": 3,
         "zero_rule": "BEST",
@@ -574,8 +536,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot of open actions at month-end (New York time)",
-        "time_note": "The action file has no closed date yet, so an action that was closed late during the month can't be counted as late. Exporting soon after month-end keeps the snapshot close to month-end.",
+        "time_text": "As at month-end: actions still open on the last day of the month.",
         "open_items": [
           {
             "id": "OD-18",
@@ -593,14 +554,10 @@
         "risk": "Incidents recur when the actions agreed after a postmortem are left unfinished, because the underlying causes remain.",
         "population": "Postmortem actions still open at month-end, on incidents in the postmortem file that aren't DEFCON 0. Tracking (Monitoring or Read-only) counts as open. Overdue means the due date (ETA) is before month-end; an action with no ETA is due 30 days after it was created. Status is as at the time of the export.",
         "exclusions_text": "Done and cancelled actions. Actions created after month-end. Actions on incidents with no rating (DEFCON Not Available or blank) are shown beside the result but kept out of the score.",
-        "zero_text": "No open actions at month-end: Green (0%)."
+        "zero_text": "No open actions at month-end: not scored.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "The file has no closed date, so late closures during the month are missed.", "mitigation": "Snapshot of open actions only, until the provider adds a closed date.", "status": "Partly mitigated"},
-        {"limit": "Due dates can be moved out.", "mitigation": "None yet. There is no count of due-date changes.", "status": "No mitigation yet"},
-        {"limit": "Actions can be cancelled without the fix being made.", "mitigation": "None yet. Cancelled actions are left out and not counted.", "status": "No mitigation yet"},
-        {"limit": "A postmortem with no actions leaves nothing to be overdue.", "mitigation": "None yet. There is no check that each incident has actions.", "status": "No mitigation yet"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "postmortem action",
@@ -624,7 +581,8 @@
         "numerator_field": "overdue",
         "code": [
           {"file": "measure.py", "function": "un02", "what": "Counts postmortem actions open and overdue at month end"}
-        ]
+        ],
+        "empty_reason": "No postmortem actions open at month-end: not scored"
       }
     },
     "UN-03": {
@@ -640,9 +598,8 @@
       "numerator_label": "Client-reported issues opened",
       "denominator_label": "Client-facing app-months",
       "override_rule": null,
-      "weight": 1,
       "card": {
-        "source_system": "Coming soon (source to be agreed)",
+        "source_system": "Source to be agreed",
         "definition": "Coming soon. There is no source for client incidents yet.",
         "min_pop": 1,
         "zero_rule": "NA",
@@ -650,8 +607,7 @@
         "peer_flag_gap": 1.0,
         "tier01_only": false,
         "time_basis": "rolling",
-        "time_text": "Rolling 3 months: monthly numerators and denominators are added up across the last 3 months",
-        "time_note": "Issues are counted by the time they were opened; the app count is the month-end snapshot.",
+        "time_text": "In the month the client incident was opened.",
         "open_items": [
           {
             "id": "OD-19",
@@ -673,13 +629,10 @@
         "risk_monitored": "Clients find defects before we do.",
         "risk": "When clients find defects before we do, it shows we are missing problems that affect them and weakens their trust in our service.",
         "population": "Client-reported issues (confirmed defects or service issues) opened in the last 3 months against the family's client-facing applications, per 10 client-facing app-months.",
-        "exclusions_text": "How-to questions and feature requests."
+        "exclusions_text": "How-to questions and feature requests.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Issues can be reclassified as 'how-to'.", "mitigation": "An information count shows reclassifications.", "status": "Planned"},
-        {"limit": "Applications can be flagged as not client-facing.", "mitigation": "An information count shows changes to the client-facing flag.", "status": "Planned"},
-        {"limit": "Issues may be attributed to the wrong application.", "mitigation": "Raw counts are always shown and the unattributed % is tracked.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "rate": true,
@@ -711,7 +664,6 @@
       "numerator_label": "Scanned repos passing the Checkmarx SAST policy",
       "denominator_label": "Repos scanned by Checkmarx SAST",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "SAST scanner",
         "definition": "Share of scanned repos that pass Cyber's Checkmarx SAST policy. Green at or above the prevailing median across families; Amber up to the usual spread between families below it (at least 5 points); Red beyond that, or when any repo on a Tier 0/1 app has an overdue Emergency, Critical or High finding (Red wins).",
@@ -721,8 +673,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot: the compliance status in the month's Checkmarx SAST export",
-        "time_note": "",
+        "time_text": "From the month's Checkmarx SAST file: each repo's latest result.",
         "open_items": [
           {
             "id": "OD-20",
@@ -746,12 +697,10 @@
         "population": "Repos in the month's Checkmarx SAST export. A repo passes when Cyber's SAST policy marks it compliant, and fails when the policy marks it non-compliant because code-scanning findings are past their deadline. Repos reach a family through the GitHub repo file: each Checkmarx repo is matched by name to a GitHub repo and takes the family of that repo's owner. Repos with no match show as Not yet mapped.",
         "exclusions_text": "False positives and approved, unexpired exceptions are handled in Cyber's Checkmarx policy before a repo is marked; TRUST does not filter them again.",
         "rule_text": "Each repo passes or fails Cyber's Checkmarx SAST policy; Cyber's policy sets the fix deadlines, not TRUST. The family's result is the share of its repos that pass. Planned, not yet applied: Red when a repo on a Tier 0/1 app has an overdue Emergency, Critical or High finding.",
-        "zero_text": "No scanned repos for the family: not scored."
+        "zero_text": "No scanned repos for the family: not scored.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "False positives, exceptions and lowered severities are decided in Cyber's policy.", "mitigation": "Accepted: TRUST uses the policy result and does not re-check findings.", "status": "Partly mitigated"},
-        {"limit": "Repos left out of scanning never reach the count.", "mitigation": "None yet. Scan coverage needs the repo list.", "status": "No mitigation yet"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "scanned repo", "noun_many": "scanned repos", "verb_one": "fails the Checkmarx SAST policy", "verb_many": "fail the Checkmarx SAST policy"},
         "counts": {"den_one": "scanned repo", "den_many": "scanned repos", "verb_one": "passes the Checkmarx SAST policy", "verb_many": "pass the Checkmarx SAST policy"},
@@ -782,7 +731,6 @@
       "numerator_label": "Scanned repos passing the Checkmarx SCA policy",
       "denominator_label": "Repos scanned by Checkmarx SCA",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "SCA scanner",
         "definition": "Share of scanned repos that pass Cyber's Checkmarx SCA policy. Green at or above the prevailing median across families; Amber up to the usual spread between families below it (at least 5 points); Red beyond that, or when any repo on a Tier 0/1 app has an overdue Emergency, Critical or High finding (Red wins).",
@@ -792,8 +740,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot: the compliance status in the month's Checkmarx SCA export",
-        "time_note": "",
+        "time_text": "From the month's Checkmarx SCA file: each repo's latest result.",
         "open_items": [
           {
             "id": "OD-20",
@@ -817,12 +764,10 @@
         "population": "Repos in the month's Checkmarx SCA export. A repo passes when Cyber's SCA policy marks it compliant, and fails when the policy marks it non-compliant because open-source dependency findings are past their deadline. Repos reach a family through the GitHub repo file: each Checkmarx repo is matched by name to a GitHub repo and takes the family of that repo's owner. Repos with no match show as Not yet mapped.",
         "exclusions_text": "False positives and approved, unexpired exceptions are handled in Cyber's Checkmarx policy before a repo is marked; TRUST does not filter them again.",
         "rule_text": "Each repo passes or fails Cyber's Checkmarx SCA policy; Cyber's policy sets the fix deadlines, not TRUST. The family's result is the share of its repos that pass. Planned, not yet applied: Red when a repo on a Tier 0/1 app has an overdue Emergency, Critical or High finding.",
-        "zero_text": "No scanned repos for the family: not scored."
+        "zero_text": "No scanned repos for the family: not scored.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "False positives, exceptions and lowered severities are decided in Cyber's policy.", "mitigation": "Accepted: TRUST uses the policy result and does not re-check findings.", "status": "Partly mitigated"},
-        {"limit": "Repos left out of scanning never reach the count.", "mitigation": "None yet. Scan coverage needs the repo list.", "status": "No mitigation yet"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "scanned repo", "noun_many": "scanned repos", "verb_one": "fails the Checkmarx SCA policy", "verb_many": "fail the Checkmarx SCA policy"},
         "counts": {"den_one": "scanned repo", "den_many": "scanned repos", "verb_one": "passes the Checkmarx SCA policy", "verb_many": "pass the Checkmarx SCA policy"},
@@ -853,7 +798,6 @@
       "numerator_label": "E/C/H secret findings overdue",
       "denominator_label": "E/C/H secret findings open at month-end or closed during the month",
       "override_rule": "critical_secret",
-      "weight": 1,
       "card": {
         "source_system": "Secrets scanner",
         "definition": "Share of open Emergency/Critical/High secret findings older than SLA. Any overdue Emergency/Critical secret = Red.",
@@ -863,8 +807,7 @@
         "peer_flag_gap": 15.0,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-22",
@@ -891,13 +834,10 @@
         "risk_monitored": "Exposed secrets give attackers direct access to systems.",
         "risk": "Exposed credentials (passwords, keys and tokens) give direct, authenticated access to systems and data. They need the fastest remediation of any finding type.",
         "population": "Emergency/Critical/High secret findings that were open at month-end or closed during the month; overdue means open past the SLA at month-end, or closed during the month after the SLA. A secret counts as closed only when rotated or revoked, not just removed from code.",
-        "exclusions_text": "Approved, unexpired exceptions (removed from the numerator only)."
+        "exclusions_text": "Approved, unexpired exceptions (removed from the numerator only).",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "The commit is deleted but the secret is not rotated.", "mitigation": "A closure must be evidenced by rotation.", "status": "Planned"},
-        {"limit": "Real secrets can be marked as test or placeholder false positives.", "mitigation": "An information count shows false positives marked.", "status": "Planned"},
-        {"limit": "A finding can be downgraded to High to avoid the Red rule for Emergency/Critical.", "mitigation": "An information count shows downgrades from Emergency/Critical.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "secret finding",
@@ -930,7 +870,6 @@
       "denominator_label": "Eligible privileged accounts",
       "override_rule": null,
       "pass_fail": true,
-      "weight": 1,
       "card": {
         "source_system": "CyberArk",
         "definition": "Count of eligible privileged accounts (per IAM standard) vaulted in CyberArk. Pass/fail: Green when every eligible account is vaulted; Amber when any is not; Red when an account belonging to a Tier 0/1 app is not.",
@@ -940,8 +879,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-23",
@@ -961,13 +899,10 @@
         "risk_monitored": "Privileged accounts are misused or compromised without rotation or a record of use.",
         "risk": "Privileged accounts that are not vaulted may be misused or compromised without credential rotation or a record of who used them. Vaulting does not by itself show that the access was appropriate.",
         "population": "Eligible privileged accounts, as set centrally by the IAM standard, that are vaulted in CyberArk with automatic rotation.",
-        "exclusions_text": "Only those listed in the IAM standard."
+        "exclusions_text": "Only those listed in the IAM standard.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Accounts can be reclassified as non-privileged.", "mitigation": "Eligibility is set centrally, not by the provider or family, and an information count shows accounts reclassified out.", "status": "Planned"},
-        {"limit": "Incomplete discovery makes the denominator too small.", "mitigation": "Discovery coverage is shown as information.", "status": "Planned"},
-        {"limit": "Account ownership is hard to attribute to a team.", "mitigation": "The unattributed % is tracked.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "eligible privileged account",
@@ -991,7 +926,6 @@
       "denominator_label": "Eligible apps",
       "override_rule": null,
       "pass_fail": true,
-      "weight": 1,
       "card": {
         "source_system": "SailPoint",
         "definition": "Count of eligible apps (per IAM standard) governed in SailPoint. Pass/fail: Green when every eligible app is governed; Amber when any is not; Red when a Tier 0/1 app is not.",
@@ -1001,8 +935,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-24",
@@ -1022,12 +955,10 @@
         "risk_monitored": "Access to apps is not reviewed and leavers keep access.",
         "risk": "Applications that are not governed in SailPoint may have access that is never reviewed and leavers who keep access. Being in SailPoint makes those controls possible but does not prove they operate.",
         "population": "Eligible applications (production applications with their own user store or entitlements, per the central IAM standard) that are governed in SailPoint.",
-        "exclusions_text": "SSO-only applications with no application-level entitlements."
+        "exclusions_text": "SSO-only applications with no application-level entitlements.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "An application can be marked 'SSO-only' to become ineligible.", "mitigation": "Eligibility is set centrally, and an information count shows eligibility changes.", "status": "Planned"},
-        {"limit": "An application can be integrated with no certification campaign.", "mitigation": "An information count shows integrated applications with no certification in 12 months.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "eligible app", "noun_many": "eligible apps", "verb_one": "is not yet governed in SailPoint", "verb_many": "are not yet governed in SailPoint"},
         "counts": {"den_one": "app", "den_many": "apps", "verb_one": "governed", "verb_many": "governed"}
@@ -1045,7 +976,6 @@
       "numerator_label": "Hosted apps with >= 1 EOL component",
       "denominator_label": "Platform-hosted apps",
       "override_rule": "t01_internet_eol",
-      "weight": 1,
       "card": {
         "source_system": "Hosting platform",
         "definition": "Share of platform-hosted apps with at least one end-of-support component. Any EOL on a Tier 0/1 internet-facing app = Red.",
@@ -1055,8 +985,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "snapshot",
-        "time_text": "Snapshot at month-end 23:59 (firm reporting timezone)",
-        "time_note": "",
+        "time_text": "As at month-end.",
         "open_items": [
           {
             "id": "OD-25",
@@ -1078,13 +1007,10 @@
         "risk_monitored": "Unsupported components can no longer be patched.",
         "risk": "Components past vendor end-of-support no longer receive security fixes, so any weakness found in them stays open. This matters most on internet-facing applications.",
         "population": "Applications on the in-house hosting platform with at least one runtime, OS, framework or database component past end-of-support.",
-        "exclusions_text": "Off-platform estate is out of v1 scope and shown as 'Not assessed' with its application count. EOL exceptions are shown but still counted."
+        "exclusions_text": "Off-platform estate is out of v1 scope and shown as 'Not assessed' with its application count. EOL exceptions are shown but still counted.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Moving applications off-platform makes them 'Not assessed'.", "mitigation": "Information counts show the off-platform application count and its change, and applications moved off-platform.", "status": "Planned"},
-        {"limit": "End-of-life reference data can lag the vendor's announcements.", "mitigation": "Suggested: refresh the reference data on a fixed cadence and show the refresh date beside the result.", "status": "Planned"},
-        {"limit": "The internet-facing flag can be wrong.", "mitigation": "The flag is confirmed through owner confirmation in TR-03.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "hosted app",
@@ -1109,7 +1035,6 @@
       "numerator_label": "Deployed changes through TCC",
       "denominator_label": "Deployed changes (TCC and Non-TCC)",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "Change tool (TCC and Non-TCC exports)",
         "definition": "Share of a family's deployed production changes that went through TCC.",
@@ -1119,8 +1044,7 @@
         "peer_flag_gap": 15.0,
         "tier01_only": false,
         "time_basis": "flow",
-        "time_text": "Flow during the month: counted in the month the change ticket was created (for TCC, the last deployment date is used only when the created date is blank; for Non-TCC, the last updated date)",
-        "time_note": "A change counts in the month its ticket was created. TE-02 counts releases a little later, in the month their 7-day revert window closes, so in any one month the two metrics can cover different changes. That is expected: each is counted when its answer is known.",
+        "time_text": "In the month the change ticket was created.",
         "open_items": [
           {
             "id": "OD-27",
@@ -1138,16 +1062,10 @@
         "risk": "Every production change should go through TCC, the firm's change control route. A change made outside TCC skips its review and approval steps, so unreviewed changes can reach production. This is the core program-change control.",
         "population": "Production changes deployed in the month, from both the TCC and the Non-TCC exports, counted in the month the ticket was created. A change counts as through TCC when it is in the TCC export, Standard changes included. Non-TCC changes count as deployed when their Status is Completed, Resolved, Monitoring or Client. A change in both exports counts once, as TCC.",
         "exclusions_text": "Changes with no production deployment recorded (TCC), or with a status that doesn't mean deployed (Non-TCC).",
-        "zero_text": "No deployed changes in the month: not scored."
+        "zero_text": "No deployed changes in the month: not scored.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Going through TCC doesn't show that a change was approved before it was deployed.", "mitigation": "None yet in this metric. The TCC file still carries the approval time, so it can be checked again later.", "status": "No mitigation yet"},
-        {"limit": "The Non-TCC export has no deployment date.", "mitigation": "The month comes from the ticket's Created Date, the same rule as TCC. Working rule until Change Management confirms (Q-NTCC-01).", "status": "Partly mitigated"},
-        {"limit": "Which Non-TCC statuses mean a change was deployed isn't confirmed yet.", "mitigation": "Working rule: Completed, Resolved, Monitoring and Client count as deployed (Q-NTCC-02).", "status": "Partly mitigated"},
-        {"limit": "A Non-TCC change with no author email can't be placed with a family.", "mitigation": "It shows as Not yet mapped on the firm page, never hidden.", "status": "Partly mitigated"},
-        {"limit": "A change could appear in both exports.", "mitigation": "It counts once, as TCC, and is listed when the month is mapped.", "status": "Mitigated"},
-        {"limit": "Many deployments can be linked to one general ticket.", "mitigation": "None yet. There is no check for tickets linked to many deployments.", "status": "No mitigation yet"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {"noun_one": "deployed change", "noun_many": "deployed changes", "verb_one": "went outside TCC", "verb_many": "went outside TCC"},
         "counts": {"den_one": "deployed change", "den_many": "deployed changes", "verb_one": "went through TCC", "verb_many": "went through TCC"}
@@ -1177,7 +1095,6 @@
       "numerator_label": "Prod releases reverted within 7 days",
       "denominator_label": "Prod releases",
       "override_rule": "client_impact",
-      "weight": 1,
       "card": {
         "source_system": "Change tool",
         "definition": "Share of production releases backed out within 7 days.",
@@ -1187,8 +1104,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "flow",
-        "time_text": "Each release counts in the month its 7-day revert window ends (release date + 7 days)",
-        "time_note": "A release counts in the month its 7-day revert window closes (release date + 7 days): a release on 28 September counts in October. TE-01 counts changes in the month their ticket was created, so in any one month the two metrics can cover different changes. That is expected: each is counted when its answer is known.",
+        "time_text": "In the month the release's 7-day revert window ends: a release on 28 September counts in October.",
         "open_items": [
           {
             "id": "OD-29",
@@ -1207,14 +1123,10 @@
         "population": "Production releases through TCC whose 7-day revert window ended in the month. A release is reverted when its overall outcome is 40, 50, 60 or 90 (backed out, including a backout started by the client).",
         "exclusions_text": "Outcome 95 (obsoleted). Outcome 99 (unknown) and a blank outcome are left out of the rate and counted separately.",
         "rule_text": null,
-        "zero_text": "No releases in the month: not scored."
+        "zero_text": "No releases in the month: not scored.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Releases late in a month have not finished their 7-day window.", "mitigation": "Each release counts in the month its window ends (owner, 2 Nov 2026), so none is counted early.", "status": "Mitigated"},
-        {"limit": "A release with an unknown (99) or blank outcome can't be judged.", "mitigation": "Left out of the rate and counted separately. The counts are not shown on the page yet.", "status": "Partly mitigated"},
-        {"limit": "A low rate can mean good testing, or fixing forward instead of backing out.", "mitigation": "Read together with UN-01 (incidents). There is no count of quick fixes yet.", "status": "Partly mitigated"},
-        {"limit": "Bundling changes into fewer releases shrinks the count.", "mitigation": "None yet. There is no release-count trend.", "status": "No mitigation yet"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "noun_one": "release",
@@ -1250,7 +1162,6 @@
       "numerator_label": "Prod defects raised",
       "denominator_label": "Prod releases",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "Change tool",
         "definition": "Production defects per 100 production releases.",
@@ -1260,8 +1171,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "flow",
-        "time_text": "Flow during the month: events counted by timestamp from the 1st 00:00:00 to the last day 23:59:59",
-        "time_note": "Defects are counted by the date raised and releases by release date.",
+        "time_text": "Still to be decided: the month a defect is raised, or the month it is closed.",
         "open_items": [
           {
             "id": "OD-29",
@@ -1283,14 +1193,10 @@
         "risk_monitored": "Defects escape testing into production.",
         "risk": "Defects that escape testing into production affect clients. The defect rate relative to release volume shows how well testing is working.",
         "population": "Production defects raised in the month against the family's applications, per 100 production releases.",
-        "exclusions_text": "Items closed as 'not a defect' (shown as information)."
+        "exclusions_text": "Items closed as 'not a defect' (shown as information).",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "Defects raised this month often come from earlier releases, so numerator and denominator are not linked.", "mitigation": "Suggested: show a rolling 3-month rate beside the monthly rate to smooth the timing difference.", "status": "Planned"},
-        {"limit": "Defects can be under-logged.", "mitigation": "Suggested: compare defect volumes with incident (UN-01) and client-reported issue (UN-03) volumes to spot under-logging.", "status": "Planned"},
-        {"limit": "The defect definition varies between teams.", "mitigation": "The defect definition is set centrally.", "status": "Planned"},
-        {"limit": "Fewer, larger releases inflate the rate.", "mitigation": "Suggested: show the release count and its trend beside the rate.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "outstanding": {
           "rate": true,
@@ -1316,7 +1222,6 @@
       "numerator_label": "AI-assisted commits",
       "denominator_label": "Commits",
       "override_rule": null,
-      "weight": 1,
       "card": {
         "source_system": "GitHub Enterprise Server",
         "definition": "Share of commits flagged as AI-assisted. Information only: no tolerance threshold, not scored.",
@@ -1326,8 +1231,7 @@
         "peer_flag_gap": null,
         "tier01_only": false,
         "time_basis": "flow",
-        "time_text": "Flow during the month: events counted by timestamp from the 1st 00:00:00 to the last day 23:59:59",
-        "time_note": "",
+        "time_text": "In the month the commit was made.",
         "open_items": [
           {
             "id": "OD-30",
@@ -1339,12 +1243,10 @@
         "risk_monitored": null,
         "risk": "This indicator is context only and is not scored. It shows how widely AI coding assistance is used, to help the reader judge change risk and review practice.",
         "population": "Commits in the month to the default branches of active repositories that are identified as AI-assisted.",
-        "exclusions_text": "Bot and automation commits."
+        "exclusions_text": "Bot and automation commits.",
+        "risks": []
       },
-      "known_limits": [
-        {"limit": "The rate relies on self-declaration or telemetry, so it is understated.", "mitigation": "It is shown as context only and never feeds scores or the watch list, so the understatement cannot change a result.", "status": "Planned"},
-        {"limit": "A higher or lower rate must not be read as better or worse.", "mitigation": "It is shown as context only and never feeds scores or the watch list.", "status": "Planned"}
-      ],
+      "known_limits": [],
       "wording": {
         "counts": {"num_one": "AI-assisted commit", "num_many": "AI-assisted commits", "join": "out of", "den_one": "commit", "den_many": "commits"}
       }

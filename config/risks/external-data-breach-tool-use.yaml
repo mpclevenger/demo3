@@ -1,0 +1,22 @@
+domain: Cyber
+category: Unauthorized access
+name: External data breach based on tool use
+likelihood_scoring:
+  critical: ">.80 and (RD01 in ad or RD02 in ad or RD03 in ad) or (RD16 in ad and RD39 in ad)"
+  high: ">.60 and (RD01 in ad or RD03 in ad)"
+likelihood_drivers: [RD01, RD36, RD54]
+impact_drivers: [RD02, RD54]
+impact_scoring:
+  financial_impact:  { critical: null, high: "RD50 in ad", medium: "RD02 in ad", low: "dc >= 1" }
+  client_impact:     { critical: "RD02 in ad and RD54 in ad", high: "RD02 in ad", medium: null, low: "dc >= 1" }
+  regulatory_impact: { critical: null, high: "RD02 in ad and RD50 in ad", medium: "RD02 in ad", low: "dc >= 1" }
+description: >
+  Someone outside the firm gets hold of confidential data by abusing a tool or service that has more access than it needs.
+example: >
+  A support tool that can read every client record is reached through a stolen password, and the records are copied out.
+framework_mappings:
+  iso_25010:
+    - characteristic: Security
+      sub_characteristic: Confidentiality
+  nist_sp_800_30:
+    - threat_event: Obtain sensitive information through exfiltration

@@ -16,18 +16,18 @@ def r(status):
 
 def test_a_block_scores_from_any_one_scored_metric():
     ms = [("REL-01", r("Green")), ("REL-02", r("N/A")), ("REL-03", r("N/A"))]      # 1 of 3 arrived metrics scored
-    assert scoring.block(ms, {}, None, ANY)[0]["score"] == 100
-    assert scoring.block(ms, {}, None, OLD)[0]["status"] == "Insufficient data"
+    assert scoring.block(ms, None, ANY)[0]["score"] == 100
+    assert scoring.block(ms, None, OLD)[0]["status"] == "Insufficient data"
     none = [("REL-01", r("N/A")), ("REL-02", r("N/A"))]
-    assert scoring.block(none, {}, None, ANY)[0]["status"] == "Insufficient data"   # still needs one
+    assert scoring.block(none, None, ANY)[0]["status"] == "Insufficient data"   # still needs one
 
 
 def test_trust_from_any_scored_block():
     fr = {"metrics": {"REL-01": r("Green"), "SEC-01": r("Amber")}}
-    blocks, trust, status, _ = scoring.family(fr, M, {}, None, ANY)
+    blocks, trust, status, _ = scoring.family(fr, M, None, ANY)
     assert trust == 75 and status == "Amber"
-    assert scoring.family(fr, M, {}, None, OLD)[1] is None
-    assert scoring.family({"metrics": {}}, M, {}, None, ANY)[1] is None             # no block at all: no score
+    assert scoring.family(fr, M, None, OLD)[1] is None
+    assert scoring.family({"metrics": {}}, M, None, ANY)[1] is None             # no block at all: no score
 
 
 def test_bad_settings_fall_back_to_the_original_rules():

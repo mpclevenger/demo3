@@ -10,7 +10,7 @@ import json
 import os
 import pathlib
 
-from . import scoring, score_month, storage
+from . import measure, scoring, score_month, storage
 from .intake.common import loads_tolerant
 
 MIN_VALUES = 5     # fewest family results needed to set a threshold
@@ -50,7 +50,7 @@ def calibrate(months, cfg=None, tpl=None):
             row["why"] = (f"Only {score_month.plural(len(vals), 'family result', 'family results')} scored "
                           f"in these months; at least {MIN_VALUES} are needed")
         else:
-            unit_word = "incidents" if mid == "UN-01" else "points"
+            unit_word = "per 10 apps" if mid in measure.PER_10_APPS else "points"
             # work it out as a median even if an earlier calibration fixed it (the quarterly review)
             as_median = dict(cfg, metrics=dict(cfg["metrics"], **{mid: dict(mc, basis="Prevailing median")}))
             t = score_month.thresholds_for(mid, vals, hib[mid], as_median, unit_word=unit_word)
