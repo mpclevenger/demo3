@@ -18,7 +18,8 @@ NAMES = {"hr": "HR", "hr_mapping": "product family owners", "tcc": "TCC changes"
          "actions": "postmortem action items", "postmortems": "postmortems", "cx_sast": "Checkmarx SAST",
          "cx_sca": "Checkmarx SCA", "itdr": "ITDR applications",
          "dr_tests": "DR tests", "repos": "GitHub repos",
-         "defects": "Jira issues", "app_inventory": "app inventory", "app_owner_members": "AD owner groups"}
+         "defects": "Jira issues", "app_inventory": "app inventory", "app_owner_members": "AD owner groups",
+         "risk_assessments": "risk assessments"}
 
 
 def _fields_needed(feed):

@@ -1,0 +1,48 @@
+# MADE-UP TEST DATA: not a real risk. Shape of the risk assessment engine's risk files (one file per domain).
+air.change.01:
+  domain: Change
+  category: Unauthorized change
+  name: Change reaches production without approval
+  likelihood_scoring:
+    critical: ">.80 and (RD22 in ad and RD23 in ad)"
+    high: ">.60 and RD22 in ad"
+  likelihood_drivers: [RD22, RD23, RD30]
+  impact_drivers: [RD02, RD54]
+  impact_scoring:
+    financial_impact:  { critical: null, high: "RD50 in ad", medium: "RD02 in ad", low: "dc >= 1" }
+    client_impact:     { critical: "RD02 in ad and RD54 in ad", high: "RD02 in ad", medium: null, low: "dc >= 1" }
+    regulatory_impact: { critical: null, high: "RD50 in ad", medium: "RD02 in ad", low: "dc >= 1" }
+  description: >
+    A change goes live without going through the change process, so nobody checked it or knows it happened.
+  example: >
+    A hotfix is pushed straight to production on a Friday night and isn't recorded in TCC.
+  framework_mappings:
+    iso_25010:
+      - characteristic: Maintainability
+        sub_characteristic: Modifiability
+    nist_sp_800_30:
+      - threat_event: Make unauthorized changes to systems
+
+air.change.02:
+  domain: Change
+  category: Failed change
+  name: Release breaks a service and has to be backed out
+  likelihood_scoring:
+    critical: ">.80 and RD22 in ad and RD63 in ad"
+    high: ">.60 and (RD22 in ad or RD31 in ad)"
+  likelihood_drivers: [RD22, RD31, RD63]
+  impact_drivers: [RD54, RD02]
+  impact_scoring:
+    financial_impact:  { critical: null, high: null, medium: "RD54 in ad", low: "dc >= 1" }
+    client_impact:     { critical: "RD54 in ad and RD02 in ad", high: "RD54 in ad", medium: "dc >= 1", low: null }
+    regulatory_impact: { critical: null, high: null, medium: null, low: "dc >= 1" }
+  description: >
+    A release goes wrong in production and has to be reverted, causing an outage or degraded service while it's fixed.
+  example: >
+    A database change locks a busy table at market open and is rolled back an hour later.
+  framework_mappings:
+    iso_25010:
+      - characteristic: Reliability
+        sub_characteristic: Availability
+    nist_sp_800_30:
+      - threat_event: Introduce errors through flawed changes

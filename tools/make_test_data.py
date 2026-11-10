@@ -783,6 +783,34 @@ def _app_owner_members(world):
     return "app_owner_members.csv", _csv(AD_HEADERS, rows)
 
 
+RA_HEADERS = ["Group", "Departments", "Assessment date", "Risk ID", "Applicable", "Likelihood", "Impact", "Drivers"]
+RA_RISKS = ["air.cyber.01", "air.change.01", "air.ops.01", "air.data.01"]
+RA_DRIVERS = ["RD01 Access to confidential data: the application keeps its own user accounts",
+              "RD63 Incidents per head: has 50.0 incidents per 100 heads versus a prevailing average of 22.9",
+              "RD14 Legacy technology: 11 of 22 people work on legacy platforms",
+              "RD22 Change volume: well above the prevailing average of releases per month"]
+
+
+def _risk_assessments(world):
+    """Made-up risk assessment results (owner, 9 Nov 2026): one group per L4 manager's department, one row per
+    risk. Fixed by the world's seed. Uploaded in the first month only, so later months show the carry-forward.
+    Plus one group whose department isn't in HR, so it shows as not placed."""
+    import random as _r
+    rng = _r.Random(world.get("seed", 7) * 31 + 5)
+    levels = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    rows = []
+    for fam in world["families"]:
+        for m in fam["managers"]:
+            when = f"0{rng.randint(1, 6)}/{rng.randint(10, 28)}/2026"     # before the first month (July)
+            for rid in RA_RISKS:
+                li, im = rng.choices(levels, [3, 4, 3, 1])[0], rng.choices(levels, [2, 4, 3, 1])[0]
+                drivers = " | ".join(rng.sample(RA_DRIVERS, rng.randint(1, 2))) if "HIGH" in (li, im) or "CRITICAL" in (li, im) else ""
+                rows.append([m["dept"], m["dept"], when, rid, "", li, im, drivers])
+    rows.append(["Shared Print Services", "Print Services", "03/02/2025", "air.ops.01", "", "HIGH", "HIGH", RA_DRIVERS[2]])
+    rows.append(["Shared Print Services", "Print Services", "03/02/2025", "air.data.01", "No", "", "", ""])
+    return "risk_assessments.csv", _csv(RA_HEADERS, rows)
+
+
 # ---------------------------------------------------------------------------- the month
 
 
@@ -804,6 +832,7 @@ def make_month(world, month):
         "defects": _defects(world, month),
         "app_inventory": _app_inventory(world),
         "app_owner_members": _app_owner_members(world),
+        **({"risk_assessments": _risk_assessments(world)} if month == world.get("first_month", month) else {}),
     }
 
 
@@ -825,6 +854,7 @@ def write_files(out_dir, months, families=8, seed=7, cto_sam=None):
     import pathlib
     out = pathlib.Path(out_dir)
     world = make_world(families=max(3, min(13, int(families))), seed=seed, cto_sam=cto_sam)
+    world.update(seed=seed, first_month=min(months))      # risk assessments go in the first month only
     manifest = {"cto_sam": world["cto_sam"], "families": families, "seed": seed, "months": {}}
     for month in months:
         folder = out / month

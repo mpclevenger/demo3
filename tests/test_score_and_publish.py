@@ -6,7 +6,7 @@ import sys
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "backend"))
-from trust import __main__ as cli, mapping, publish, score_month, store  # noqa: E402
+from trust import __main__ as cli, config, mapping, publish, score_month, store  # noqa: E402
 
 FIX = pathlib.Path(__file__).parent / "fixtures"
 ALL = (("hr", "hr_firmwide.csv"), ("hr_mapping", "family_owners.csv"), ("tcc", "tcc_export.csv"),
@@ -38,7 +38,10 @@ def test_counts_statuses_and_scores(tmp_store):
     # prevailing median: only 2 families have a result here and 5 are needed, so no tolerance threshold yet
     assert pay["TE-01"]["status"] == "N/A" and "No tolerance threshold yet" in pay["TE-01"]["reason"]
     # Automatic Red rules are off (owner, 9 Nov 2026): client impact no longer forces Red; too few families for a median
-    assert pay["TE-02"]["status"] == "N/A" and not pay["TE-02"]["override"]
+    # owner, 9 Nov 2026: TE-02 has a fixed tolerance threshold (Green 95% or better, Red below 90%), so it is
+    # scored even with fewer than 5 families
+    t2 = pay["TE-02"]
+    assert t2["status"] == ("Green" if t2["value"] >= 95 else "Amber" if t2["value"] >= 90 else "Red") and not t2["override"]
     # Nothing open is not scored (owner, 9 Nov 2026; was Green under D-100); 1-2 items = Low confidence, not scored
     assert p["families"]["lending"]["metrics"]["UN-02"]["status"] == "N/A"
     assert "No postmortem actions open" in p["families"]["lending"]["metrics"]["UN-02"]["reason"]
@@ -48,13 +51,14 @@ def test_counts_statuses_and_scores(tmp_store):
     assert p["firm_totals"]["SE-01"] == 66.7 and p["unattributed_pct"]["Cyber"] == 100.0
     # Feeds not received are No data and left out
     assert pay["TR-01"]["status"] == "DNR" and "Arch" in p["dnr"]
-    # Neither TE metric is scored here, so Releases has no score and Payments has no TRUST score
-    assert p["families"]["payments"]["blocks"]["REL"]["score"] is None and p["families"]["payments"]["trust"] is None
+    # TE-01 isn't scored here (no threshold with 2 families); TE-02 is, on its fixed tolerance threshold
+    # (owner, 9 Nov 2026), so Releases scores from TE-02 alone and Payments gets a TRUST score
+    assert p["families"]["payments"]["blocks"]["REL"]["score"] is not None and p["families"]["payments"]["trust"] is not None
     assert p["coverage"] == {"block_min_share": 0, "trust_min_blocks": 1}
     # Firm TRUST is scored from the pooled firm-wide results, not averaged from the families (owner, 4 Nov 2026):
-    # No tolerance threshold for either TE metric yet, and no automatic Red rule, so the firm has no TRUST score
-    assert p["firm"]["TE-01"]["status"] == "N/A" and p["firm"]["TE-02"]["status"] == "N/A" and not p["firm"]["TE-02"].get("override")
-    assert p["firm_blocks"]["REL"]["score"] is None and p["firm_trust"] is None
+    # TE-01 has no tolerance threshold yet; TE-02 is scored on its fixed one, so the firm's Releases block scores
+    assert p["firm"]["TE-01"]["status"] == "N/A" and p["firm"]["TE-02"]["status"] != "N/A" and not p["firm"]["TE-02"].get("override")
+    assert p["firm_blocks"]["REL"]["score"] is not None and p["firm_trust"] is not None
     # A result's 'provisional' means "carried over" in the front end; never set here
     assert not any(r["provisional"] for f in p["families"].values() for r in f["metrics"].values())
     # Mapping notes reach the Data sources page as {rule, detail}, each rule unique within its file
@@ -92,7 +96,7 @@ def test_second_month_gets_prior_values_and_watch_list(tmp_store):
     score_month.run("2026-10")
     d = publish.build()
     te02 = d["periods"]["2026-10"]["families"]["payments"]["metrics"]["TE-02"]
-    assert te02["prior_status"] == "N/A" and te02["history"] == ["N/A", te02["status"]]
+    assert te02["history"] == [te02["prior_status"], te02["status"]]
     assert d["trend"]["months"] == ["2026-09", "2026-10"]
 
 
@@ -184,12 +188,12 @@ def test_thresholds_need_five_families(tmp_store):
     Owner, 4 Nov 2026: and needs at least 5 family results (setting min_families_for_threshold)."""
     from trust import score_month
     cfg = score_month.thresholds_config()
-    assert score_month.thresholds_for("TE-02", [10.0, 30.0, 20.0, 25.0], False, cfg) is None   # 4 families: none
-    t = score_month.thresholds_for("TE-02", [10.0, 30.0, 20.0, 25.0, 15.0], False, cfg)
+    assert score_month.thresholds_for("UN-02", [10.0, 30.0, 20.0, 25.0], False, cfg) is None   # 4 families: none
+    t = score_month.thresholds_for("UN-02", [10.0, 30.0, 20.0, 25.0, 15.0], False, cfg)
     assert t["basis"] == "Calibrated" and t["green"] == 20.0                               # 5 families: median
     assert "5 are needed" in score_month.no_threshold_reason(4, cfg)
-    assert score_month.thresholds_for("TE-02", [10.0, 30.0], False, dict(cfg, min_families_for_threshold=2))["green"] == 20.0
-    assert score_month.thresholds_for("TE-02", [], False, cfg) is None                    # nothing to calculate from
+    assert score_month.thresholds_for("UN-02", [10.0, 30.0], False, dict(cfg, min_families_for_threshold=2))["green"] == 20.0
+    assert score_month.thresholds_for("UN-02", [], False, cfg) is None                    # nothing to calculate from
     assert score_month.thresholds_for("RE-02", [], True, cfg)["basis"] == "Policy"         # policy metrics unchanged
 
 
@@ -257,3 +261,12 @@ def test_te02_counts_releases_without_a_revert():
     assert sum(i["no_revert"] for i in r["items"]) == 9
     m = config.metrics()["TE-02"]
     assert m["higher_is_better"] is True and m["counting"]["numerator_field"] == "no_revert"
+
+
+def test_te02_has_a_fixed_tolerance_threshold():
+    """Owner, 9 Nov 2026: Green at 95% or better, Amber from 90% to under 95%, Red below 90%, for every family."""
+    cfg = score_month.thresholds_config()
+    t = score_month.thresholds_for("TE-02", [], True, cfg)
+    assert (t["green"], t["red"], t["basis"]) == (95, 90, "Policy") and "Tech Risk" in t["reason"]
+    st = lambda v: score_month.status_of(v, t, True, "%")[0]
+    assert (st(99.3), st(95.0), st(94.9), st(90.0), st(89.9)) == ("Green", "Green", "Amber", "Amber", "Red")

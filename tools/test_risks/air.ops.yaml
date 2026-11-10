@@ -1,0 +1,48 @@
+# MADE-UP TEST DATA: not a real risk. Shape of the risk assessment engine's risk files (one file per domain).
+air.ops.01:
+  domain: Operational
+  category: Service disruption
+  name: Critical service can't be recovered in time
+  likelihood_scoring:
+    critical: ">.80 and (RD40 in ad and RD41 in ad)"
+    high: ">.60 and RD40 in ad"
+  likelihood_drivers: [RD40, RD41, RD14]
+  impact_drivers: [RD54, RD50]
+  impact_scoring:
+    financial_impact:  { critical: "RD50 in ad and RD54 in ad", high: "RD50 in ad", medium: "dc >= 1", low: null }
+    client_impact:     { critical: "RD54 in ad", high: "dc >= 1", medium: null, low: null }
+    regulatory_impact: { critical: null, high: "RD50 in ad", medium: "dc >= 1", low: null }
+  description: >
+    A Tier 0 or 1 service goes down and can't be brought back within its recovery time, because recovery hasn't been tested.
+  example: >
+    A failover is attempted for the first time during a real outage and the standby site is missing a configuration change.
+  framework_mappings:
+    iso_25010:
+      - characteristic: Reliability
+        sub_characteristic: Recoverability
+    nist_sp_800_30:
+      - threat_event: Cause disruption through failure of critical components
+
+air.ops.02:
+  domain: Operational
+  category: Repeat incidents
+  name: The same incident keeps happening
+  likelihood_scoring:
+    critical: ">.80 and RD63 in ad and RD64 in ad"
+    high: ">.60 and RD63 in ad"
+  likelihood_drivers: [RD63, RD64, RD12]
+  impact_drivers: [RD54]
+  impact_scoring:
+    financial_impact:  { critical: null, high: null, medium: "RD54 in ad", low: "dc >= 1" }
+    client_impact:     { critical: null, high: "RD54 in ad", medium: "dc >= 1", low: null }
+    regulatory_impact: { critical: null, high: null, medium: null, low: "dc >= 1" }
+  description: >
+    Postmortem actions aren't finished, so the cause of an incident stays in place and it happens again.
+  example: >
+    A disk-space alert that caused an outage in March causes the same outage in June because the clean-up job was never built.
+  framework_mappings:
+    iso_25010:
+      - characteristic: Reliability
+        sub_characteristic: Maturity
+    nist_sp_800_30:
+      - threat_event: Cause disruption through recurring faults

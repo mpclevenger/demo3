@@ -1,6 +1,6 @@
 # Data sources
 
-One page per provider file (called a **feed**), 19 in all (the AD owner groups file added 6 Nov 2026; the DR tests file added 3 Nov 2026; owner, 2 Nov 2026: there is no incidents file and no client-issues file; UN-01 comes from the postmortem file, and UN-03, client incidents, is coming soon). Each page says what the file holds, its key, how every row is placed with a person, team and family, which metrics it feeds, who to contact, and its status.
+One page per provider file (called a **feed**), 20 in all (risk assessments added 9 Nov 2026; the AD owner groups file added 6 Nov 2026; the DR tests file added 3 Nov 2026; owner, 2 Nov 2026: there is no incidents file and no client-issues file; UN-01 comes from the postmortem file, and UN-03, client incidents, is coming soon). Each page says what the file holds, its key, how every row is placed with a person, team and family, which metrics it feeds, who to contact, and its status.
 
 **The provider's real file is the layout.** TRUST reads each file as the provider sends it, through the feed's **column map** (which real header gives each field TRUST needs). Where a page still lists a first-guess layout, the real file's header row replaces it. **Every file uploads on its own**: no feed needs any other feed to be loaded first. Real data is cleared to load (classification signed off 2 Nov 2026). **Provider contacts are placeholders** until the owner supplies the list.
 
@@ -24,13 +24,14 @@ How the files flow into the numbers: [data flow per source](../architecture.md#p
 | `commits` | Change | TE-04 | [Commit counts (GHES)](commits.md) |
 | `itdr` | ITDR | Which applications are Tier 0/1, for RE-01 and RE-03 (both scored from 4 Nov 2026) and RE-02 (planned: it needs test-plan dates). Excel, header over rows 1 and 2: `Ref`, `Application Name`, `Business Product Area`, `Recovery Tier`. Kept as the table `itdr_application` (owner, 3 Nov 2026) | [ITDR applications](itdr.md) |
 | `dr_tests` | ITDR | Completed DR tests, for RE-01 and RE-03 (both scored from 4 Nov 2026): `Tier`, `Name`, `Business Area`, `ITDR Lead`, `Type of Test` (Open, Closed, TTX), `When`, `Status`, `Comments`. Kept as the table `dr_test`; linked to the ITDR applications by name (owner, 3 Nov 2026) | [DR tests](dr_tests.md) |
+| `risk_assessments` | Tech Risk (risk assessment engine) | Inherent risk per assessed group and risk, as a CSV for now (owner, 9 Nov 2026): `Group`, `Departments`, `Assessment date`, `Risk ID`, `Applicable`, `Likelihood`, `Impact`, `Drivers`. Shown on family pages and metric cards; changes no score. A month with no file uses the newest earlier one | [Risk assessments](risk_assessments.md) |
 | `secrets` | Cyber | SE-03 | [Secrets findings](secrets.md) |
 | `cyberark` | Cyber | SE-04 | [CyberArk accounts](cyberark.md) |
 | `sailpoint` | Cyber | SE-05 | [SailPoint apps](sailpoint.md) |
 | `hosting_eol` | Hosting platform | SE-06 | [Hosting platform components](hosting_eol.md) |
 | `defects` | Tech Risk (Jira export) | TE-03 (planned) and delivery figures (shown, not scored): team = the person who closed the issue, via HR (owner, 3 Nov 2026). Made by `tools/jira_export.py` | [Jira issues](defects.md) |
 
-Only the pages for `app_inventory`, `app_owner_members`, `repos`, `itdr`, `dr_tests` and `defects` are in this repo. The other pages in the table are kept outside this repo for now, so their links stay broken until they are copied in.
+Only the pages for `app_inventory`, `app_owner_members`, `repos`, `itdr`, `dr_tests`, `defects` and `risk_assessments` are in this repo. The other pages in the table are kept outside this repo for now, so their links stay broken until they are copied in.
 
 ## Adding a source, or a provider's file changing
 

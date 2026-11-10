@@ -34,7 +34,7 @@ def test_dry_run_lists_but_removes_nothing(seeded):
     today = datetime.date(2026, 10, 15)
     p = retention.run(write=False, today=today, keep_months=2, out=lambda *_: None)
     assert [m["month"] for m in p["months"]] == ["2026-08"]
-    assert p["months"][0]["submission"] == 14 and p["months"][0]["kept_bytes"] > 0
+    assert p["months"][0]["submission"] == 15 and p["months"][0]["kept_bytes"] > 0
     assert storage.months("scored") == ["2026-08", "2026-09", "2026-10"]
     assert (seeded / "uploads" / "2026-08").exists()
 

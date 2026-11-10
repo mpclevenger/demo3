@@ -26,8 +26,8 @@
 - **Where the numbers come from.** Tech Risk uploads each provider's own export on the website. Each file loads on its own. TRUST places every row with a family through HR (the person's manager chain) and the product family owners file, then counts per family. Rows it can't place are shown as "Not yet mapped" and never scored.
 - **Every month stands alone.** Nothing is rolled up over several months.
 - **Tolerance thresholds.**
-  - **Policy:** a fixed Green tolerance and Red limit from `config/thresholds.json`. None of the measured metrics today (TE-01 moved to the prevailing median, owner 8 Nov 2026).
-  - **Prevailing median:** worked out afresh each month from that month's family results. Green tolerance = the median family. Red limit = the median plus or minus the Amber band. The band is 1.5 × the usual spread between families (the middle half, once 4 or more families have a result) and never less than 5 percentage points (UN-01: 1 incident). Fewer than 5 families with a result (setting `min_families_for_threshold`, owner 4 Nov 2026): no threshold, and the metric shows "No tolerance threshold yet" and isn't scored that month. TE-02, UN-01, UN-02, SE-01 and SE-02 use it.
+  - **Policy:** a fixed Green tolerance and Red limit from `config/thresholds.json`. Of the measured metrics, only TE-02 (owner, 9 Nov 2026: Green 95% or better, Amber 90% to under 95%, Red below 90%; nearly every team releases close to 100% without a revert, and the middle family made teams Amber for less than one release). TE-01 moved to the prevailing median on 8 Nov 2026.
+  - **Prevailing median:** worked out afresh each month from that month's family results. Green tolerance = the median family. Red limit = the median plus or minus the Amber band. The band is 1.5 × the usual spread between families (the middle half, once 4 or more families have a result) and never less than 5 percentage points (UN-01: 1 incident). Fewer than 5 families with a result (setting `min_families_for_threshold`, owner 4 Nov 2026): no threshold, and the metric shows "No tolerance threshold yet" and isn't scored that month. UN-01, UN-02, SE-01 and SE-02 use it (TE-02 did until 9 Nov 2026).
   - **Calibration (owner, 3 Nov 2026):** the prevailing median is used once to set the tolerance thresholds, pooling several real months (`python manage.py calibrate`), and they are then fixed and reviewed each quarter by Tech Risk. Until a metric is calibrated it is worked out each month as above.
   - There are no threshold versions or approval records yet. The thresholds have not been through formal approval.
 - **Status.** Green tolerance is inclusive; the Red limit is exclusive; between the two is Amber. Judged on the value rounded to 1 decimal. A metric scores by its colour (Green 100, Amber 50, Red 0), not by how far it is from a line: just past the Red limit scores the same 0 as far past it.
@@ -41,7 +41,7 @@
 | ID | Metric | Better when | Result | Threshold basis | Population (in short) | Month |
 |---|---|---|---|---|---|---|
 | TE-01 | Change ticket adoption | Higher | % of deployed production changes that went through TCC | Prevailing median | Deployed TCC and Non-TCC changes | Month the ticket was created |
-| TE-02 | Releases without a revert (7 days) | Higher | % of production releases not backed out | Prevailing median | Deployed TCC releases with a known outcome | Month the 7-day window ends |
+| TE-02 | Releases without a revert (7 days) | Higher | % of production releases not backed out | Policy: Green ≥ 95%, Red < 90% (owner, 9 Nov 2026) | Deployed TCC releases with a known outcome | Month the 7-day window ends |
 | UN-01 | Critical and SWE incidents | Lower | Count of unique incidents (until the app inventory gives "per 10 apps") | Prevailing median, band at least 1 incident | Postmortem file, DEFCON 1–5 | Month the incident ended |
 | UN-02 | Postmortem actions overdue rate | Lower | % of open actions past their due date | Prevailing median | Actions open at month-end | Snapshot at month-end |
 | SE-01 | Checkmarx SAST pass rate | Higher | % of scanned repos passing Cyber's SAST policy | Prevailing median | Repos in the month's SAST export | The month's export |
@@ -211,7 +211,7 @@ Status: **Measured** (scored today), **Coming soon** (no source yet) or **Planne
 | SE-05 | SailPoint governance | IAM (Cyber) | More governed | Apps (count) | Planned | Pass/fail (1.13) |
 | SE-06 | EOL components (platform-hosted) | Hosting platform | Lower | % of platform-hosted apps | Planned | Not set; override: Tier 0/1 internet-facing app with EOL = Red |
 | TE-01 | Change ticket adoption | Change | Higher | % of deployed changes through TCC | **Measured** | Prevailing median |
-| TE-02 | Releases without a revert (7 days) | Change | Higher | % of production releases | **Measured** | Prevailing median |
+| TE-02 | Releases without a revert (7 days) | Change | Higher | % of production releases | **Measured** | Policy: Green ≥ 95%, Red < 90% |
 | TE-03 | Defect rate | Change | Lower | Defects per 100 releases | Planned | Not set |
 | TE-04 | AI-assisted commits rate | Change (GHES data) | n/a | % of commits | Planned | Information only, no threshold |
 

@@ -26,13 +26,13 @@ import re
 
 from . import checks, config, storage
 from .intake import (actions, app_inventory, checkmarx, defects, dr_tests, families, hr, itdr, ntcc, owner_groups,
-                     postmortems, repos, tcc)
+                     postmortems, repos, risk_assessments, tcc)
 from .intake.common import column_map, keep_columns
 from .intake.common import upload_time
 
 FEEDS = ("hr", "hr_mapping", "app_inventory", "app_owner_members", "repos", "tcc", "ntcc", "postmortems", "actions",
          "cx_sast", "cx_sca", "commits", "itdr", "dr_tests", "secrets",
-         "cyberark", "sailpoint", "hosting_eol", "defects")
+         "cyberark", "sailpoint", "hosting_eol", "defects", "risk_assessments")
 
 
 store_dir = storage.store_dir
@@ -171,7 +171,7 @@ TABLE_FIELDS = {"tcc": tcc.FIELDS, "ntcc": ntcc.FIELDS, "actions": actions.FIELD
                 "postmortems": postmortems.FIELDS, "hr_mapping": families.FIELDS, "itdr": itdr.FIELDS,
                 "dr_tests": dr_tests.FIELDS, "repos": repos.FIELDS,
                 "defects": defects.FIELDS, "app_inventory": app_inventory.FIELDS,
-                "app_owner_members": owner_groups.FIELDS}
+                "app_owner_members": owner_groups.FIELDS, "risk_assessments": risk_assessments.FIELDS}
 # Files whose header spans more than one row (ITDR: merged over rows 1 and 2, owner 3 Nov 2026).
 HEADER_ROWS = {"itdr": itdr.HEADER_ROWS, "dr_tests": dr_tests.HEADER_ROWS}
 

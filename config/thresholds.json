@@ -38,7 +38,12 @@
       "_note": "Owner, 8 Nov 2026: TE-01 is now deployed changes through TCC / all deployed changes (TCC + Non-TCC), judged against the median family. Was Policy 80 / 60 on 'approved before deployment'."
     },
     "TE-02": {
-      "basis": "Prevailing median"
+      "basis": "Policy",
+      "green": 95,
+      "red": 90,
+      "set_by": "Tech Risk",
+      "set_on": "2026-11-09",
+      "_note": "Owner, 9 Nov 2026: a fixed tolerance threshold, because nearly every team releases close to 100% without a revert and the middle family made teams Amber for less than one release. Green at 95% or better; Amber from 90% to under 95%; Red below 90%. Was the prevailing median."
     },
     "UN-02": {
       "basis": "Prevailing median"

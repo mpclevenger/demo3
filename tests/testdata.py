@@ -11,7 +11,8 @@ from trust import mapping, publish, score_month, store  # noqa: E402
 
 def seed_store(months, families=6, seed=7, cto_sam="cto.demo"):
     world = make_test_data.make_world(families=families, seed=seed, cto_sam=cto_sam)
-    for month in months:
+    world.update(seed=seed, first_month=min(months))
+    for month in sorted(months):
         for feed, (name, data) in make_test_data.make_month(world, month).items():
             store.upload(feed, month, data, name, "Test data")
         mapping.map_month(month, "Test data")

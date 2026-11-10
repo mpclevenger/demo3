@@ -11,6 +11,7 @@ from collections import defaultdict
 import json
 
 from . import config, linking, lost, storage, store
+from .intake import risk_assessments
 from .intake import (actions, app_inventory, app_links, checkmarx, defects, dr_tests, families, hr, itdr, ntcc,
                      owner_groups, postmortems, repos, tcc)
 
@@ -30,7 +31,20 @@ READERS = {
     "defects": lambda raw, e, s: defects.read(raw),
     "app_inventory": lambda raw, e, s: app_inventory.read(raw, s),
     "app_owner_members": lambda raw, e, s: owner_groups.read(raw),
+    "risk_assessments": lambda raw, e, s: risk_assessments.read(raw),
 }
+# Files that stay current until a newer one arrives (owner, 9 Nov 2026): a month with none uses the newest earlier
+# upload, and says which month it came from. Risk assessments aren't done monthly.
+CARRY_FORWARD = ("risk_assessments",)
+
+
+def _carried(feed, month):
+    """(entry, raw, from month) for the newest upload of a feed in an earlier month, else None."""
+    for m in sorted((x for x in storage.upload_months() if x < month), reverse=True):
+        got = store.latest(m).get(feed)
+        if got and got[1] is not None:
+            return got[0], got[1], m
+    return None
 
 
 def settings():
@@ -47,6 +61,11 @@ def map_month(month, by="command line"):
     feeds, notes = {}, []
 
     for feed in store.FEEDS:
+        carried_from = None
+        if feed not in uploads and feed in CARRY_FORWARD:
+            got = _carried(feed, month)
+            if got:
+                uploads[feed], carried_from = (got[0], got[1]), got[2]
         if feed not in uploads:
             feeds[feed] = {"status": "not received"}
             continue
@@ -60,6 +79,8 @@ def map_month(month, by="command line"):
         base = {"status": "mapped", "file": entry["original_name"], "sha256": entry["sha256"],
                 "original_sha256": entry.get("original_sha256"),
                 "uploaded_at": entry["uploaded_at"], "uploaded_by": entry["uploaded_by"]}
+        if carried_from:
+            base["carried_from"] = carried_from
         reader = READERS.get(feed)
         if reader is None:
             feeds[feed] = {**base, "status": "received, no reader yet",
@@ -229,6 +250,35 @@ def map_month(month, by="command line"):
                       ("repos", "owner_email")):
         for x in feeds.get(feed, {}).get("rows") or []:
             x["person"], x["team"], x["team_key"] = who.get(x.get(key), (None, None, None))
+
+    # Risk assessments (owner, 9 Nov 2026): each assessed group (usually an L4) is placed by its departments, which
+    # match HR's Department column; a group belongs to every family its departments land in. A family takes the
+    # highest rating on each risk among its groups (risk_assessments.by_family).
+    ra = feeds.get("risk_assessments") or {}
+    if ra.get("rows") is not None:
+        groups = {}
+        for x in ra["rows"]:
+            groups.setdefault(x["group"], set()).update(x["departments"])
+        probes = [{"ref": g, "business_product_area": d} for g, ds in groups.items() for d in sorted(ds)]
+        fams_of = {g: set() for g in groups}
+        if probes and family_rows is not None and people:
+            itdr.match_families(probes, family_rows, people if family_of_sam is not None else None, itdr.area_match_min(s))
+            for pr in probes:
+                if pr.get("family_id"):
+                    fams_of[pr["ref"]].add(pr["family_id"])
+        ra["by_family"] = risk_assessments.by_family(ra["rows"], {g: sorted(f) for g, f in fams_of.items()})
+        ra["groups"] = [{"group": g, "departments": sorted(groups[g]), "families": sorted(fams_of[g]),
+                         "assessed_on": max((x["assessed_on"] or "" for x in ra["rows"] if x["group"] == g), default="") or None}
+                        for g in sorted(groups)]
+        lost_groups = [g["group"] for g in ra["groups"] if not g["families"]]
+        if lost_groups:
+            ra.setdefault("notes", []).append(
+                f"{len(lost_groups)} assessed group{'s' if len(lost_groups) != 1 else ''} not placed with a family "
+                f"(none of their departments matched HR's Department column): {', '.join(lost_groups[:5])}"
+                f"{' and more' if len(lost_groups) > 5 else ''}")
+        if ra.get("carried_from"):
+            ra.setdefault("notes", []).append(f"For information: no risk assessment file this month; using the one "
+                                              f"uploaded for {ra['carried_from']}.")
 
     # Lost and Found (owner, 9 Nov 2026): approved claims place items no source file placed. A claim never
     # overrides a file, and carries over to every month mapped after it is approved.

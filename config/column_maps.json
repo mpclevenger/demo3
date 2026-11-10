@@ -413,6 +413,17 @@
       "repo"
     ]
   },
+  "risk_assessments": {
+    "_note": "Risk assessment results (owner, 9 Nov 2026), as a CSV for now: one row per assessed group per risk. Group (usually an L4); Departments (the HR Departments it covers, separated by ;); Assessment date; Risk ID (e.g. air.cyber.01); Applicable (blank or yes; no = left out); Likelihood and Impact (LOW, MEDIUM, HIGH, CRITICAL); Drivers (optional: why, separated by |). A month with no file uses the newest earlier one.",
+    "Group": ["Group", "Business unit", "business_unit", "Assessed group"],
+    "Departments": ["Departments", "Department", "Selected scope", "score_departments"],
+    "Assessment date": ["Assessment date", "assessment_date", "Assessed on"],
+    "Risk ID": ["Risk ID", "risk_id"],
+    "Applicable": ["Applicable", "Applicability"],
+    "Likelihood": ["Likelihood"],
+    "Impact": ["Impact"],
+    "Drivers": ["Drivers", "Triggered drivers", "Rationale"]
+  },
   "app_owner_members": {
     "_note": "AD owner groups (owner, 6 Nov 2026): the CSV written by tools/expand_owner_groups.ps1, one row per member of each owner group (nested groups included).",
     "owner_email": [

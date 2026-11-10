@@ -61,3 +61,16 @@ def test_every_data_source_has_an_owner_entry():
     ds = config.data_sources()
     assert set(ds) == set(store.FEEDS), f"missing or unknown sources: {set(store.FEEDS) ^ set(ds)}"
     assert all("owner" in x for x in ds.values())
+
+
+def test_a_domain_risk_file_holds_several_risks(tmp_path, monkeypatch):
+    """Owner, 9 Nov 2026: risk files are named by domain (air.cyber.yaml) and hold several risks, linked by ID."""
+    from trust import config
+    (tmp_path / "air.cyber.yaml").write_text("air.cyber.01:\n  domain: Cyber\n  name: Breach\n"
+                                             "'02':\n  domain: Cyber\n  name: Misuse\n")
+    (tmp_path / "air.data.yaml").write_text("- id: air.data.07\n  name: Leak\n- name: Loss\n")
+    (tmp_path / "old-one.yaml").write_text("domain: Change\nname: Single\n")
+    monkeypatch.setenv("TRUST_RISKS", str(tmp_path))
+    got = config.risks()
+    assert {k: v["name"] for k, v in got.items()} == {"air.cyber.01": "Breach", "air.cyber.02": "Misuse",
+                                                     "air.data.07": "Leak", "air.data.02": "Loss", "old-one": "Single"}

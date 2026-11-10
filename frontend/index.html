@@ -6,7 +6,10 @@
 <title>TRUST scorecard</title>
 <style>
 :root{--text:#1f2328;--muted:#59636e;--border:#d0d7de;--slate:#243040;--focus:#0b57d0;
- --gf:#d1f0dc;--gt:#0f5132;--gr:#1a7f45;--af:#fde8b0;--at:#664d03;--ar:#b8860b;--rf:#f9c9c9;--rt:#842029;--rr:#b3261e;--nf:#eef1f4;--nt:#59636e;--nr:#b6bec7;--inf:#e3ecf7}
+ --gf:#d1f0dc;--gt:#0f5132;--gr:#157a40;--af:#fde8b0;--at:#664d03;--ar:#8a6100;--rf:#f9c9c9;--rt:#842029;--rr:#b3261e;
+ /* one colour per status (owner, 9 Nov 2026): --gr / --ar / --rr are THE Green, Amber and Red for text, strips, dots and arrows
+    everywhere; --gf / --af / --rf are the pale fills; --gt / --at / --rt only for text on those fills (badges). */
+ --gtint:rgba(209,240,220,.55);--atint:rgba(253,232,176,.6);--rtint:rgba(249,201,201,.5);--nf:#eef1f4;--nt:#59636e;--nr:#b6bec7;--inf:#e3ecf7}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 html{font-size:14px}
 body{margin:0;background:#fff;color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
@@ -59,7 +62,7 @@ button[disabled]{cursor:not-allowed}
 .need ul{list-style:none;margin:0;padding:0}.need li{padding:5px 0}.need .nrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .ico{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:6px;background:none;color:var(--muted);cursor:pointer;vertical-align:middle;flex:none}
 .ico:hover{background:var(--inf);color:var(--text)}
-.fam .dt td{padding:8px 8px}.fam .lt td{padding:4px 8px;vertical-align:top}.fam .lt .res,.fam .lt .fw .res{display:block;font-size:16px;font-weight:700;line-height:22px;color:var(--text)}.fam .lt td>.chip,.fam .lt td>.dl,.fam .lt td>.dd{margin-top:1px}.fam .lt .fg{display:block;margin-top:2px}.fam .lt .res.st-Red{color:var(--rt)}.fam .lt .res.st-Amber{color:var(--at)}.fam .lt .res.st-Green{color:var(--gt)}.fam .lt .res.st-Info-only,.fam .lt .res.st-Not-scored,.fam .lt .res.st-Not-Tier-0\/1{color:var(--muted)}.fam .lt td .ico{margin:-2px 0}.acf{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px}.acf .drv{margin:0}.acf .flag,.stc .flag{margin:0}.stc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}.fam .lt .flags{flex-wrap:nowrap}.fam .lt .flag{white-space:nowrap}.fam .dt th{padding:6px 8px}.fam .lt .res{font-size:16px}.fam .lt td .chip{font-size:12px}.fam .lt td .flags{margin-top:6px}.icos{text-align:right;white-space:nowrap}
+.fam .dt td{padding:8px 8px}.fam .lt td{padding:4px 8px;vertical-align:top}.fam .lt .res,.fam .lt .fw .res{display:block;font-size:16px;font-weight:700;line-height:22px;color:var(--text)}.fam .lt td>.chip,.fam .lt td>.dl,.fam .lt td>.dd{margin-top:1px}.fam .lt .fg{display:block;margin-top:2px}.fam .lt .res.st-Red{color:var(--rr)}.fam .lt .res.st-Amber{color:var(--ar)}.fam .lt .res.st-Green{color:var(--gr)}.fam .lt .res.st-Info-only,.fam .lt .res.st-Not-scored,.fam .lt .res.st-Not-Tier-0\/1{color:var(--muted)}.fam .lt td .ico{margin:-2px 0}.acf{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px}.acf .drv{margin:0}.acf .flag,.stc .flag{margin:0}.stc{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}.fam .lt .flags{flex-wrap:nowrap}.fam .lt .flag{white-space:nowrap}.fam .dt th{padding:6px 8px}.fam .lt .res{font-size:16px}.fam .lt td .chip{font-size:12px}.fam .lt td .flags{margin-top:6px}.icos{text-align:right;white-space:nowrap}
 .att{list-style:none;margin:0;padding:0}.ac{padding:10px 0;border-top:1px solid var(--border)}.ac:last-child{border-bottom:1px solid var(--border)}
 .ac1{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.acn{font-size:16px;font-weight:600;flex:1 1 280px;min-width:0}.ac1 .res{font-size:16px;font-weight:800}.lim{font-size:12px;color:var(--muted)}.acr{margin-left:auto}
 .drv{margin:4px 0 0 2px;font-size:14px}
@@ -88,7 +91,7 @@ main{padding:24px 0 40px;outline:none}main.wrap{padding-top:24px;padding-bottom:
 .i{background:var(--inf);color:#1f3a5f;box-shadow:inset 4px 0 0 #7a9cc6}
 .chip{display:inline-block;padding:2px 9px 2px 12px;font-weight:700;font-size:14px;border-radius:3px;white-space:nowrap}
 .pill{display:inline-block;padding:3px 16px 3px 18px;font-weight:700;font-size:16px;border-radius:3px;vertical-align:middle}
-.dl{font-size:14px;font-weight:700;white-space:nowrap}.dl.up{color:#0f5132}.dl.dn{color:#8c1d18}.dl.z{color:var(--muted)}
+.dl{font-size:14px;font-weight:700;white-space:nowrap}.dl.up{color:var(--gr)}.dl.dn{color:var(--rr)}.dl.z{color:var(--muted)}
 /* hero */
 .hero{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;padding:0;margin-bottom:12px}
 .hero .hl{display:flex;align-items:baseline;gap:12px;white-space:nowrap}.hero .lbl{align-self:last baseline}.hero .hd{align-self:last baseline}
@@ -122,16 +125,16 @@ table.hm{border-collapse:collapse;width:100%;table-layout:fixed}
 .hm td.bd{width:40px;padding:0;text-align:center;background:#f3f5f7;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.08em;border-left:0}
 .hm td.bd span{writing-mode:vertical-rl;transform:rotate(180deg);display:inline-block}
 .hm td.c{text-align:center}
-.ft>tbody>tr.mrow.s-r>td{background:rgba(220,38,38,.09)}.ft>tbody>tr.mrow.s-a>td{background:rgba(217,119,6,.11)}.ft>tbody>tr.mrow.s-g>td{background:rgba(22,163,74,.08)}
-.ft>tbody>tr.rdet.s-r>td{background:rgba(220,38,38,.04)}.ft>tbody>tr.rdet.s-a>td{background:rgba(217,119,6,.05)}.ft>tbody>tr.rdet.s-g>td{background:rgba(22,163,74,.035)}
-.ft>tbody>tr.mrow>td:first-child,.ft>tbody>tr.rdet>td:first-child{box-shadow:inset 4px 0 0 #c4cad1}.ft>tbody>tr.s-r>td:first-child{box-shadow:inset 4px 0 0 #dc2626}.ft>tbody>tr.s-a>td:first-child{box-shadow:inset 4px 0 0 #d97706}.ft>tbody>tr.s-g>td:first-child{box-shadow:inset 4px 0 0 #16a34a}
+.ft>tbody>tr.mrow.s-r>td{background:var(--rtint)}.ft>tbody>tr.mrow.s-a>td{background:var(--atint)}.ft>tbody>tr.mrow.s-g>td{background:var(--gtint)}
+.ft>tbody>tr.rdet.s-r>td{background:rgba(249,201,201,.22)}.ft>tbody>tr.rdet.s-a>td{background:rgba(253,232,176,.26)}.ft>tbody>tr.rdet.s-g>td{background:rgba(209,240,220,.25)}
+.ft>tbody>tr.mrow>td:first-child,.ft>tbody>tr.rdet>td:first-child{box-shadow:inset 4px 0 0 #c4cad1}.ft>tbody>tr.s-r>td:first-child{box-shadow:inset 4px 0 0 var(--rr)}.ft>tbody>tr.s-a>td:first-child{box-shadow:inset 4px 0 0 var(--ar)}.ft>tbody>tr.s-g>td:first-child{box-shadow:inset 4px 0 0 var(--gr)}
 .ftwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.ft{min-width:860px}
 .ft td{vertical-align:top;overflow-wrap:break-word;word-break:normal}.ft td .dl{white-space:normal;font-size:13px}.ft .bub-team{max-width:100%;min-width:0;text-align:left;overflow-wrap:anywhere;white-space:normal}
 .ft .res,.fam .lt.ft .res,.fam .lt.ft .fw .res{font-size:15px;line-height:20px}.ft td .cap{font-size:12.5px}
 @media (max-width:1240px){.ft col.cb,.ft>thead>tr>th:first-child,.ft>tbody>tr.mrow>td:first-child{display:none}
-.ft>tbody>tr.mrow>td:nth-child(2){box-shadow:inset 4px 0 0 #c4cad1;padding-left:12px}.ft>tbody>tr.s-r>td:nth-child(2){box-shadow:inset 4px 0 0 #dc2626}.ft>tbody>tr.s-a>td:nth-child(2){box-shadow:inset 4px 0 0 #d97706}.ft>tbody>tr.s-g>td:nth-child(2){box-shadow:inset 4px 0 0 #16a34a}
+.ft>tbody>tr.mrow>td:nth-child(2){box-shadow:inset 4px 0 0 #c4cad1;padding-left:12px}.ft>tbody>tr.s-r>td:nth-child(2){box-shadow:inset 4px 0 0 var(--rr)}.ft>tbody>tr.s-a>td:nth-child(2){box-shadow:inset 4px 0 0 var(--ar)}.ft>tbody>tr.s-g>td:nth-child(2){box-shadow:inset 4px 0 0 var(--gr)}
 .ft{min-width:720px}}
-.ft td{vertical-align:top}.ft .bubs{flex-wrap:wrap}.ft td.tc{padding-left:0!important;padding-right:6px!important}.ft>tbody>tr.mrow>td:first-child{padding-left:12px;font-weight:600;color:#3b434c}.ft .fst{font-weight:700;white-space:normal;overflow-wrap:break-word;display:inline-block;max-width:100%}.ft .fst.s-r{color:#b91c1c}.ft .fst.s-a{color:#92400e}.ft .fst.s-g{color:#166534}.ft .fst.s-n{color:#4a535d;font-weight:600}
+.ft td{vertical-align:top}.ft .bubs{flex-wrap:wrap}.ft td.tc{padding-left:0!important;padding-right:6px!important}.ft>tbody>tr.mrow>td:first-child{padding-left:12px;font-weight:600;color:#3b434c}.ft .fst{font-weight:700;white-space:normal;overflow-wrap:break-word;display:inline-block;max-width:100%}.ft .fst.s-r{color:var(--rr)}.ft .fst.s-a{color:var(--ar)}.ft .fst.s-g{color:var(--gr)}.ft .fst.s-n{color:#4a535d;font-weight:600}
 .ft .ftags{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}.ft td.tc{text-align:right}.ft .rtog{min-width:28px;padding:2px 6px}.ft tr.rdet td{padding:6px 12px 10px!important}
 .ftools{float:right;display:flex;gap:8px;align-items:center}.fchip{font-size:13px;background:#eef2f6;border-radius:4px;padding:2px 4px 2px 8px}
 .sgm[data-act="blkf"]{cursor:pointer}.sgm[data-act="blkf"]:hover{outline:1px solid #9aa3ad}.sgm[data-act="blkf"]:focus-visible{outline:2px solid #2563eb;outline-offset:2px}.sgm.fon{outline:2px solid #1f2937;outline-offset:-2px}
@@ -139,7 +142,7 @@ table.hm{border-collapse:collapse;width:100%;table-layout:fixed}
 @keyframes jumpfl{0%{background:#fde68a}100%{background:transparent}}.mrow.jump td{animation:jumpfl 2.5s ease-out}.hm td.c b{font-weight:700;font-size:14px}.hm td .s{display:block;font-size:12px;font-weight:600}
 .hm td.tr b{font-size:16px}.hm td.tr .dl{margin-left:8px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:12px;color:var(--muted);margin:12px 0 4px}
-.hm tr.firm td{border-top:3px solid #fff}.hm tr.firm td.fn{font-weight:700;color:var(--text)}.hm td.bd.h span{writing-mode:horizontal-tb;transform:none;font-size:12px}.hm tr.firm td.c b{font-size:14px}.fam .lt .fw{line-height:1.25}.fam .lt .fw .fg{display:block;font-size:12px;color:var(--muted);margin-top:2px}.fam .lt .fw .fg.bad{color:#842029;font-weight:600}.fam .lt .fw .fx{font-size:12px;color:var(--muted);font-weight:400}
+.hm tr.firm td{border-top:3px solid #fff}.hm tr.firm td.fn{font-weight:700;color:var(--text)}.hm td.bd.h span{writing-mode:horizontal-tb;transform:none;font-size:12px}.hm tr.firm td.c b{font-size:14px}.fam .lt .fw{line-height:1.25}.fam .lt .fw .fg{display:block;font-size:12px;color:var(--muted);margin-top:2px}.fam .lt .fw .fg.bad{color:var(--rr);font-weight:600}.fam .lt .fw .fx{font-size:12px;color:var(--muted);font-weight:400}
 .legend .chip{font-size:12px;padding:1px 7px 1px 10px}.legend .sep{color:var(--border)}
 .foot12{font-size:12px;color:var(--muted);margin:4px 0 0}.amb{color:#7a5200;font-weight:700}
 /* watch */
@@ -251,7 +254,7 @@ summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .dictrow:hover{background:#f6f8fa}.dictrow.sel{background:#e8f0fe;box-shadow:inset 3px 0 0 #0a4db3}.dictrow:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
 .dictrow[hidden],.dgh[hidden],.dgl[hidden]{display:none}.dictrow .id{color:var(--muted);font-size:12px}.dr1{font-size:14px}.dnone{padding:8px 12px;margin:0}
 .dcard{border:1px solid var(--border);border-radius:6px;padding:16px 20px;background:#fff}.dcard.empty{background:#f6f8fa}
-.lst{display:inline-block;white-space:nowrap;font-size:13px;font-weight:600;padding:1px 8px;border-radius:4px;border-left:3px solid}.lst.g{background:#d1f0dc;color:#0f5132}.lst.a{background:#fde8b0;color:#664d03}.lst.r{background:#f9c9c9;color:#842029}.dfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.unmap{margin:10px 0 0;padding:8px 12px;border-left:4px solid #8c959f;background:#f6f8fa;font-size:14px;max-width:960px}.story{border-left:4px solid #475569;background:#f6f8fa;padding:10px 16px;margin:14px 0 12px;font-size:15px;line-height:1.5}.story p{margin:0}.story h3{font-size:14px;margin:8px 0 2px}.story ul{margin:0;padding-left:20px}.hm .lead{display:block;font-size:12px;color:var(--muted);font-weight:400}.hero .tol{display:block;font-size:13px;color:var(--muted);margin-top:2px}.hm td.trd{background:#fff;padding:2px 6px}.spark{display:block}.spark .spreal{fill:none;stroke:#334155;stroke-width:1.6}.spark .spsam{fill:none;stroke:#94a3b8;stroke-width:1.4;stroke-dasharray:3 2}.spark .sptol{stroke:#16a34a;stroke-width:1;stroke-dasharray:2 2;opacity:.7}.spark .spdot{fill:#334155}.spark .sphol{fill:#fff;stroke:#334155;stroke-width:1.4}.hm .ld{font-size:12px;font-weight:600;margin-left:6px}.hm .ld.up{color:#15803d}.hm .ld.dn{color:#b91c1c}.hm .qrow{display:flex;align-items:center;gap:8px}.hm .qline{display:block;flex:none}.hm .qst{font-size:10px;fill:#475569}.qline .spreal{fill:none;stroke:#334155;stroke-width:1.8}.qline .spsam{fill:none;stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 2}.qline .spdot{fill:#334155}.qline .sphol{fill:#fff;stroke:#334155;stroke-width:1.4}.hm .qw{display:block;font-size:12px;font-weight:400;color:#334155}.hm .qup{color:#15803d;font-weight:600}.hm .qdn{color:#b91c1c;font-weight:600}.hm td.c{position:relative}.hm .csay{position:absolute;top:4px;right:4px}.hm .csay .fsay{padding:0 5px;font-size:11px}.hm .mstar{font-weight:700;margin-left:1px}.dsec{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}.dsec>h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.lst{display:inline-block;white-space:nowrap;font-size:13px;font-weight:600;padding:1px 8px;border-radius:4px;border-left:3px solid}.lst.g{background:#d1f0dc;color:#0f5132}.lst.a{background:#fde8b0;color:#664d03}.lst.r{background:#f9c9c9;color:#842029}.dfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.unmap{margin:10px 0 0;padding:8px 12px;border-left:4px solid #8c959f;background:#f6f8fa;font-size:14px;max-width:960px}.story{border-left:4px solid #475569;background:#f6f8fa;padding:10px 16px;margin:14px 0 12px;font-size:15px;line-height:1.5}.story p{margin:0}.story h3{font-size:14px;margin:8px 0 2px}.story ul{margin:0;padding-left:20px}.hm .lead{display:block;font-size:12px;color:var(--muted);font-weight:400}.hero .tol{display:block;font-size:13px;color:var(--muted);margin-top:2px}.hm td.trd{background:#fff;padding:2px 6px}.spark{display:block}.spark .spreal{fill:none;stroke:#334155;stroke-width:1.6}.spark .spsam{fill:none;stroke:#94a3b8;stroke-width:1.4;stroke-dasharray:3 2}.spark .sptol{stroke:var(--gr);stroke-width:1;stroke-dasharray:2 2;opacity:.7}.spark .spdot{fill:#334155}.spark .sphol{fill:#fff;stroke:#334155;stroke-width:1.4}.hm .ld{font-size:12px;font-weight:600;margin-left:6px}.hm .ld.up{color:var(--gr)}.hm .ld.dn{color:var(--rr)}.hm .qrow{display:flex;align-items:center;gap:8px}.hm .qline{display:block;flex:none}.hm .qst{font-size:10px;fill:#475569}.qline .spreal{fill:none;stroke:#334155;stroke-width:1.8}.qline .spsam{fill:none;stroke:#64748b;stroke-width:1.5;stroke-dasharray:3 2}.qline .spdot{fill:#334155}.qline .sphol{fill:#fff;stroke:#334155;stroke-width:1.4}.hm .qw{display:block;font-size:12px;font-weight:400;color:#334155}.hm .qup{color:var(--gr);font-weight:600}.hm .qdn{color:var(--rr);font-weight:600}.hm td.c{position:relative}.hm .csay{position:absolute;top:4px;right:4px}.hm .csay .fsay{padding:0 5px;font-size:11px}.hm .mstar{font-weight:700;margin-left:1px}.dsec{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}.dsec>h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .dsec p,.dsec dd{max-width:860px}.dh4{font-size:14px;margin:10px 0 2px}.dbul{margin:2px 0 0;padding-left:20px}.dbul li{margin:2px 0}
 .formula{background:#f6f8fa;border-left:3px solid var(--slate);padding:8px 12px;font-size:15px;font-weight:600}
 .dcard .dd{grid-template-columns:150px minmax(0,1fr)}
@@ -299,14 +302,15 @@ button.sm{padding:0 9px;font-size:12px}
  .dictall .dcard{break-before:page;margin-top:0}.dictall .dcard:first-of-type{break-before:auto}
  .dsec,.formula{break-inside:avoid}.dsec>h3{break-after:avoid}.fsw{display:none}
 }
-.firmt .res{display:block;font-size:16px;font-weight:700;line-height:22px;color:var(--text)}.firmt .res.st-Red{color:var(--rt)}.firmt .res.st-Amber{color:var(--at)}.firmt .res.st-Green{color:var(--gt)}.firmt .res.st-Info-only,.firmt .res.st-Not-scored{color:var(--muted)}.firmt td{vertical-align:top}.firmpg .grp{margin-top:24px}.firmpg .intro{margin:0 0 12px;max-width:760px}.firmpg .trend{margin:12px 0 0;font-size:14px}.unm td{vertical-align:top}.unm tr.subrow td{padding-top:0}.unm details.exs summary{cursor:pointer;font-size:14px}.unm details.exs ul{margin:8px 0 0;padding-left:24px;font-size:14px}.unm .share{white-space:nowrap}
+.firmt .res{display:block;font-size:16px;font-weight:700;line-height:22px;color:var(--text)}.firmt .res.st-Red{color:var(--rr)}.firmt .res.st-Amber{color:var(--ar)}.firmt .res.st-Green{color:var(--gr)}.firmt .res.st-Info-only,.firmt .res.st-Not-scored{color:var(--muted)}.firmt td{vertical-align:top}.firmpg .grp{margin-top:24px}.firmpg .intro{margin:0 0 12px;max-width:760px}.firmpg .trend{margin:12px 0 0;font-size:14px}.unm td{vertical-align:top}.unm tr.subrow td{padding-top:0}.unm details.exs summary{cursor:pointer;font-size:14px}.unm details.exs ul{margin:8px 0 0;padding-left:24px;font-size:14px}.unm .share{white-space:nowrap}
 .firmt .bhead td{background:var(--soft,#f4f6f8);border-top:2px solid var(--border);padding:10px 8px}.firmt .bhead .lq{margin-left:8px}.firmt .bhead .bsc{float:right;font-weight:600;font-size:14px}.lt .plrow td,.firmt .plrow td{color:var(--muted)}
 
 /* ===== legibility pass: tokens and overrides ===== */
 .cap,.legend,.foot12,.rule,.dt th,.flag,.lm,.pchip,.hm th span,.lim,.ticks,.xcard figcaption,.hm td .s,.wfam,.fsay,.ddt2 th,.ddt2 td{line-height:1.4}
 .cap,.foot12{max-width:100ch}
-.lftools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px;margin:6px 0 4px}.lfl{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}.lfl select{max-width:220px}.lfq input{width:300px;font:inherit;font-size:14px;padding:4px 8px;border:1px solid var(--border);border-radius:6px}.lfsum{margin:10px 0 4px;font-size:15px}.lft td{vertical-align:top;overflow-wrap:anywhere}.lft .tag{white-space:normal;display:inline-block;margin:0 0 3px;max-width:100%}.chip.ok{background:#d1f0dc;color:#0f5132}.chip.wait{background:#fde8b0;color:#664d03}.lff textarea{width:100%;max-width:640px}.okmsg{border-left:4px solid #15803d;background:#ecfdf3;padding:6px 12px;margin:8px 0}
-.itb{margin-top:4px}.itbh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin:0 0 4px}.tbf{display:inline-flex;gap:4px}.tbf button[aria-pressed=true]{background:#1f2937;color:#fff;border-color:#1f2937}.itt td{vertical-align:top}.itt tr.att td{background:#eef2f7}.itt tr.att td:first-child{box-shadow:inset 3px 0 0 #475569}.itt tr.att.r td{background:#fdf1f1}.itt tr.att.r td:first-child{box-shadow:inset 3px 0 0 #b91c1c}.itt tr.att.a td{background:#fdf6e7}.itt tr.att.a td:first-child{box-shadow:inset 3px 0 0 #b45309}.natt{font-weight:700;color:var(--text)}.itt{font-size:13px}.itt td,.itt th{padding:5px 6px}.itt .wh{white-space:nowrap}.itt .wh+.wh{margin-top:4px}.itt .wh>*{display:block}.itt .wh b{color:var(--text);font-weight:600;font-size:13px}.itt .wh span:not(.cap){color:var(--text);font-size:13px;font-weight:400}.itt .wh .cap{font-size:11.5px}.itt td.dtl{min-width:150px;max-width:220px}.itt .nw{white-space:nowrap}.itbf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:6px}.itbf>span:last-child{margin-left:auto}.pgr{display:inline-flex;align-items:center;gap:8px}.pgr button[disabled]{opacity:.45;cursor:default}.itbf a.btnlink{font-size:12px;padding:1px 9px;font-weight:400;border-color:var(--border);color:var(--link,#0a4db3)}
+.chip.inh{background:#ede9fe;color:#4c1d95;font-weight:600}.inht td{vertical-align:top}.inht tr.inh-el td:first-child{box-shadow:inset 3px 0 0 #6d28d9}
+.lftools{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px;margin:6px 0 4px}.lfl{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}.lfl select{max-width:220px}.lfq input{width:300px;font:inherit;font-size:14px;padding:4px 8px;border:1px solid var(--border);border-radius:6px}.lfsum{margin:10px 0 4px;font-size:15px}.lft td{vertical-align:top;overflow-wrap:anywhere}.lft .tag{white-space:normal;display:inline-block;margin:0 0 3px;max-width:100%}.chip.ok{background:#d1f0dc;color:#0f5132}.chip.wait{background:#fde8b0;color:#664d03}.lff textarea{width:100%;max-width:640px}.okmsg{border-left:4px solid var(--gr);background:#ecfdf3;padding:6px 12px;margin:8px 0}
+.itb{margin-top:4px}.itbh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin:0 0 4px}.tbf{display:inline-flex;gap:4px}.tbf button[aria-pressed=true]{background:#1f2937;color:#fff;border-color:#1f2937}.itt td{vertical-align:top}.itt tr.att td{background:#eef2f7}.itt tr.att td:first-child{box-shadow:inset 3px 0 0 #475569}.itt tr.att.r td{background:rgba(249,201,201,.3)}.itt tr.att.r td:first-child{box-shadow:inset 3px 0 0 var(--rr)}.itt tr.att.a td{background:rgba(253,232,176,.35)}.itt tr.att.a td:first-child{box-shadow:inset 3px 0 0 var(--ar)}.natt{font-weight:700;color:var(--text)}.itt{font-size:13px}.itt td,.itt th{padding:5px 6px}.itt .wh{white-space:nowrap}.itt .wh+.wh{margin-top:4px}.itt .wh>*{display:block}.itt .wh b{color:var(--text);font-weight:600;font-size:13px}.itt .wh span:not(.cap){color:var(--text);font-size:13px;font-weight:400}.itt .wh .cap{font-size:11.5px}.itt td.dtl{min-width:150px;max-width:220px}.itt .nw{white-space:nowrap}.itbf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:6px}.itbf>span:last-child{margin-left:auto}.pgr{display:inline-flex;align-items:center;gap:8px}.pgr button[disabled]{opacity:.45;cursor:default}.itbf a.btnlink{font-size:12px;padding:1px 9px;font-weight:400;border-color:var(--border);color:var(--link,#0a4db3)}
 .grp>p.cap,.ftwrap~p.cap,.dt~p.cap,.ddscroll~p.cap{max-width:none}   /* notes under a table run its full width (owner, 9 Nov 2026) */
 .hm td.c:not(.tr) .s{display:inline;margin-left:6px}.hm td.tr .s{display:block;margin-left:0}
 .hm td.r .s,.hm td.a .s{color:#4a535d}
@@ -927,6 +931,33 @@ button.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:
    "feeds_metrics": "RE-01, RE-03"
   },
   {
+   "id": "risk_assessments",
+   "name": "Risk assessments",
+   "provider": "Tech Risk (risk assessment engine)",
+   "file": "CSV",
+   "names_confirmed": false,
+   "key": "Group + Risk ID",
+   "columns": [
+    "Group",
+    "Departments",
+    "Assessment date",
+    "Risk ID",
+    "Applicable",
+    "Likelihood",
+    "Impact",
+    "Drivers"
+   ],
+   "row_checks": [
+    "Group or Risk ID blank -> row set aside",
+    "Likelihood and Impact: LOW, MEDIUM, HIGH or CRITICAL, any case; anything else -> row set aside",
+    "Applicable: blank or yes = counted; no or NOT_APPLICABLE = left out",
+    "The same Risk ID twice for a group -> the first row is used, the second listed",
+    "Departments are matched to HR's Department column to place the group with families; a group matching none is listed"
+   ],
+   "notes": "The risk assessment engine's results (owner, 9 Nov 2026): one row per assessed group (usually an L4) per risk, uploaded as a CSV for now. Elevated (proposed rule): likelihood High or Critical, and impact High or Critical. A family takes the highest rating among its groups. A month with no file uses the newest earlier one. Shown on family pages and metric cards for context; it changes no score.",
+   "feeds_metrics": "Inherent risk on family pages and metric cards (no score)"
+  },
+  {
    "id": "incidents",
    "name": "Incidents",
    "provider": "Ops",
@@ -1492,7 +1523,7 @@ function heroStats(){
 }
 function heroHTML(strip = true, btn = false){
   const p = P(), st = heroStats(), [c,,w] = stInfo(p.firm_trust == null ? 'Not scored' : p.firm_trust >= 80 ? 'Green' : p.firm_trust >= 50 ? 'Amber' : 'Red');
-  return `<section class="hero" aria-label="Firm result"><div class="hl"><div class="lbl" style="font-size:28px;line-height:1.05;color:var(--text,#111)">Firm<br>TRUST</div><div class="big" aria-label="${p.firm_trust}, ${w}" title="${w}" style="color:${{Green:'#15803d',Amber:'#b45309',Red:'#b91c1c'}[w] || 'inherit'}">${p.firm_trust == null ? '<span style="font-size:28px;line-height:1.1;display:block;max-width:9em">Not scored yet</span>' : p.firm_trust}</div>
+  return `<section class="hero" aria-label="Firm result"><div class="hl"><div class="lbl" style="font-size:28px;line-height:1.05;color:var(--text,#111)">Firm<br>TRUST</div><div class="big" aria-label="${p.firm_trust}, ${w}" title="${w}" style="color:${{Green:'var(--gr)',Amber:'var(--ar)',Red:'var(--rr)'}[w] || 'inherit'}">${p.firm_trust == null ? '<span style="font-size:28px;line-height:1.1;display:block;max-width:9em">Not scored yet</span>' : p.firm_trust}</div>
     <div class="hd"><span class="dd">${(p.firm_incomplete || !PRIOR[S.p]) ? '' : p.firm_trust_delta ? `<span class="dl ${p.firm_trust_delta > 0 ? 'up' : 'dn'}" style="font-size:16px">${p.firm_trust_delta > 0 ? '▲' : '▼'}${Math.abs(p.firm_trust_delta)}</span>` : '<span class="dl z" style="font-size:16px">0</span>'}${(p.firm_incomplete || !PRIOR[S.p]) ? '' : ` vs ${priorName()}`}</span></div></div>
     ${strip ? `<div class="hr"><div class="strip"><span>Families with a Red building block <b>${st.redFams.length}</b></span><span>Red metrics <b>${st.red}</b> (${st.newRed} new)</span><span>Providers in <b>${st.provIn} of ${st.provs}</b></span><span>Overdue actions <b>${st.overdue}</b></span></div></div>` : ''}${btn ? `<div class="hbtn noprint">${snapBtn()}</div>` : ''}</section>`;
 }
@@ -2157,10 +2188,31 @@ function vFamily(fid){
   return `<div class="fam${S.snap ? ' sheet' : ''}">${S.snap ? snapTop() : ''}<div class="titlebar"><div><h1>${esc(f.name)}</h1><div class="sub">${f.band === 'product' ? 'Product' : 'Platform'} family · ${P().meta.label}</div></div><div class="noprint">${picker}</div></div>
     ${p.meta.status === 'Preview' ? '<div class="banner pv" role="note"><b>PREVIEW — not locked.</b> Results can still change until the period is locked.</div>' : ''}
     ${strip}
-    ${bar}${DL.open && may('download', fid) ? dlPanel(fid) : ''}${famTable(fid, fr, p, f, loading)}${expl}<div class="grp">${notes}</div>
+    ${bar}${DL.open && may('download', fid) ? dlPanel(fid) : ''}${famTable(fid, fr, p, f, loading)}${inhPanel(fid)}${expl}<div class="grp">${notes}</div>
     <p class="cap" style="margin-top:14px">${PRIOR[S.p] ? `Change since ${priorName()}: ▲ better, ▼ worse, ${FLAT_MARK} no change.` : 'This is the first month in the scorecard, so there is nothing to compare with yet.'}${Object.values(fr.metrics).some(x => x.provisional) ? '<br>* Provisional: the provider’s data was not received.' : ''}</p>${unmappedNote('family')}${S.snap ? `<p class="cap">${SNAP_CAPTION}</p>` : ''}</div>`;
 }
 const MET_IDS = new Set(D.metrics.map(m => m.id));
+/* ---------- Inherent risk (owner, 9 Nov 2026; show only, no score change) ----------
+   From the risk assessment file: each family's ratings per risk (the highest among its assessed groups), Elevated
+   first under the proposed rule. Shown for context; tolerance thresholds don't use it yet. */
+const INH = {all:new Set()};
+const LVL = v => ({LOW:'Low', MEDIUM:'Medium', HIGH:'High', CRITICAL:'Critical'}[v] || v);
+function inhPanel(fid){
+  const ir = P().inherent_risk;
+  if (!ir) return '';
+  const rows = (ir.families || {})[fid] || [], el = rows.filter(r => r.elevated), showAll = INH.all.has(fid) || S.snap;
+  const head = `<h2 id="h-inh">Inherent risk</h2><p class="cap" style="margin:2px 0 8px;max-width:none">How exposed this family is before any controls, from the risk assessment${ir.carried_from ? ` (the file uploaded for ${esc(monthLabel(ir.carried_from))}; none was uploaded this month)` : ''}. Where a family has several assessed groups, the highest rating counts. <b>Elevated</b> (proposed rule): likelihood is High or Critical, and impact is High or Critical. It doesn’t change any score yet.</p>`;
+  if (!rows.length) return `<section class="grp" aria-labelledby="h-inh">${head}<p class="muted" style="margin:0">No assessed group is placed with ${esc(fam(fid).name)} yet.</p></section>`;
+  const shown = showAll ? rows : el;
+  const metChips = ids => ids.length ? ids.map(m => `<a class="tag" href="#dictionary-${esc(m)}">${esc(MET_IDS.has(m) ? met(m).name : m)}</a>`).join(' ') : '<span class="muted">No metric yet</span>';
+  const tr = r => `<tr${r.elevated ? ' class="inh-el"' : ''}><td><b>${esc(r.risk)}</b>${r.risk !== r.risk_id ? `<div class="cap">${esc(r.risk_id)}</div>` : ''}</td><td class="nw">${r.elevated ? '<span class="chip inh">Elevated</span><br>' : ''}${esc(LVL(r.likelihood))} likelihood<br>${esc(LVL(r.impact))} impact</td><td>${esc(r.group)}<div class="cap">${r.assessed_on ? 'Assessed ' + fd(r.assessed_on) : 'No assessment date'}${r.stale ? ' · <b>over 12 months old</b>' : ''}</div></td><td class="dtl">${r.drivers.length ? r.drivers.map(d => `<div>${esc(d)}</div>`).join('') : '<span class="muted">—</span>'}</td><td>${metChips(r.metrics)}</td></tr>`;
+  const table = shown.length ? `<div class="ddscroll"><table class="dt inht"><caption class="sr-only">${showAll ? 'Every assessed risk' : 'Elevated risks'} for ${esc(fam(fid).name)}</caption><thead><tr><th>Risk</th><th>Rating</th><th>Assessed group</th><th>Why</th><th>Metrics that watch it</th></tr></thead><tbody>${shown.map(tr).join('')}</tbody></table></div>`
+    : `<p style="margin:0">No risk is Elevated for ${esc(fam(fid).name)}.</p>`;
+  const more = rows.length > el.length && !S.snap ? `<p class="noprint" style="margin:6px 0 0"><button type="button" class="sm" data-act="inh-all" data-f="${esc(fid)}" aria-expanded="${showAll}">${showAll ? 'Show only the Elevated risks' : `Show all ${plural(rows.length, 'assessed risk', 'assessed risks')}`}</button></p>` : '';
+  return `<section class="grp" aria-labelledby="h-inh">${head}<p style="margin:0 0 6px"><b>${plural(el.length, 'risk', 'risks')} Elevated</b> out of ${plural(rows.length, 'assessed risk', 'assessed risks')}.</p>${table}${more}</section>`;
+}
+/* the families a risk is Elevated for this month: the metric card's "Elevated for" line */
+const inhElevatedFor = rid => Object.entries(((P().inherent_risk || {}).families) || {}).filter(([, rows]) => rows.some(r => r.risk_id === rid && r.elevated)).map(([f]) => f);
 function formHTML(id){
   return `<form class="cf" data-m="${id}" aria-label="Add explanation"><label for="cft"><b>Explanation</b> (plain text, up to 600 characters)</label>
     <textarea id="cft" maxlength="600" required></textarea><div class="cap"><span id="cfc">0</span> / 600</div>
@@ -2798,7 +2850,7 @@ function dictCard(id, all){
   const cur = t ? x.thresholds.find(v => v.version === t.version) : null;
   const chips = [ltag(m.block), bTeam(m.provider), bSrc(x.source_system)].join('');
   const MINF = D.min_families_for_threshold || 5;
-  const basisTxt = pfm ? esc(x.threshold_basis) : !t ? ((m.scored) && !x.not_measured ? `Prevailing median, once at least ${MINF} families have a result. Not enough families have a result in ${esc(p.meta.label)}, so there is no tolerance threshold this month and it isn’t scored.` : '') : t.basis === 'Policy' && t.set_from ? `Fixed: set from the ${esc(t.set_from)}${t.set_on ? ' on ' + fd(t.set_on) : ''}, and reviewed each quarter by Tech Risk` : t.basis === 'Policy' ? 'Policy: set by a firm standard'
+  const basisTxt = pfm ? esc(x.threshold_basis) : !t ? ((m.scored) && !x.not_measured ? `Prevailing median, once at least ${MINF} families have a result. Not enough families have a result in ${esc(p.meta.label)}, so there is no tolerance threshold this month and it isn’t scored.` : '') : t.basis === 'Policy' && t.set_from ? `Fixed: set from the ${esc(t.set_from)}${t.set_on ? ' on ' + fd(t.set_on) : ''}, and reviewed each quarter by Tech Risk` : t.basis === 'Policy' && t.set_by ? (() => { const u = m.unit === '%' ? '%' : ' ' + m.unit, hb = m.higher_is_better; return `A fixed tolerance threshold, the same for every family (set by ${esc(t.set_by)}${t.set_on ? ' on ' + fd(t.set_on) : ''}). Green: ${nfmt(t.green)}${u} or ${hb ? 'better' : 'lower'}. Amber: from ${nfmt(t.red)}${u} to ${hb ? 'under' : 'over'} ${nfmt(t.green)}${u}. Red: ${hb ? 'below' : 'above'} ${nfmt(t.red)}${u}.`; })() : t.basis === 'Policy' ? 'Policy: set by a firm standard'
     : t.basis === 'Calibrated' ? (t.sets === 'red' ? `Green tolerance from policy; Red limit from the <a href="${href('/glossary/prevailing-median')}">prevailing median</a>, worked out each month.` : `Compared each month with the middle family (the <a href="${href('/glossary/prevailing-median')}">prevailing median</a>).${t.band != null ? (() => { const bw = m.unit === '%' ? nfmt(t.band) + ' percentage points' : nfmt(t.band) + ' ' + m.unit; return ` Green: as good as the middle family or better. Amber: up to ${bw} worse. Red: more than ${bw} worse.`; })() : ''}`) : 'Placeholder: to be calibrated';
   const gapTxt = x.peer_flag_gap == null ? null : m.unit === '%' ? nfmt(x.peer_flag_gap) + ' percentage points' : Number(x.peer_flag_gap).toFixed(1).replace(/\.0$/, '') + ' ' + m.unit;
   const minPop = x.min_pop <= 1 ? 'Scored from the first item.' : `Fewer than ${x.min_pop} ${esc(lcFirst(m.denominator_label))}: shown, not scored.`;
@@ -2813,7 +2865,9 @@ function dictCard(id, all){
   /* owner, 9 Nov 2026: the risks from the risk assessment (config/risks/), linked in config/metrics.json card.risks */
   const rk = (x.risks_detail || []).filter(r => !r.missing);
   const riskBody = rk.length ? `<ul class="rlist">${rk.map(r => `<li><b>${esc(r.name)}</b> <span class="cap">${esc([r.domain, r.category].filter(Boolean).join(' · '))}</span>${r.description ? `<div>${esc(r.description)}</div>` : ''}</li>`).join('')}</ul>` : `<p style="margin:0">${esc(x.risk || x.why)}</p>`;
-  const riskSec = `<section class="dsec"><h3>${rk.length === 1 || !rk.length ? 'Risk it watches' : 'Risks it watches'}</h3>${riskBody}${it ? `<div class="bubs" style="margin:8px 0 0">${tagW(it[0])}</div>` : ''}</section>`;
+  const elFor = [...new Set(rk.flatMap(r => inhElevatedFor(r.id)))].filter(f => fam(f)).sort((a, b) => fam(a).name.localeCompare(fam(b).name));
+  const elLine = elFor.length ? `<p class="cap" style="margin:8px 0 0;max-width:none"><span class="chip inh">Elevated</span> inherent risk this month for ${elFor.map(f => `<a href="#family-${esc(f)}">${esc(fam(f).name)}</a>`).join(', ')} (from the risk assessment; proposed rule).</p>` : '';
+  const riskSec = `<section class="dsec"><h3>${rk.length === 1 || !rk.length ? 'Risk it watches' : 'Risks it watches'}</h3>${riskBody}${elLine}${it ? `<div class="bubs" style="margin:8px 0 0">${tagW(it[0])}</div>` : ''}</section>`;
   /* how it is calculated: formula, then one consistent list */
   const formula = pfm ? `<div class="formula">Result = ${esc(cardLbl(m)[0])}, out of ${esc(lcFirst(cardLbl(m)[1]))}</div><div class="cap" style="margin-top:4px">A count, not a rate.</div>`
     : `<div class="formula">Value = ${esc(cardLbl(m)[0])} ÷ ${esc(cardLbl(m)[1])} × ${sc} (${esc(m.unit)})</div><div class="cap" style="margin-top:4px">Compared at 1 decimal place.</div>`;
@@ -3413,6 +3467,7 @@ document.addEventListener('click', e => {
   if ((a.startsWith('lv-'))) { liveAct(a, b); return; }
   if (a === 'lf-claim') { LF.form = LF.form === b.dataset.k ? null : b.dataset.k; LF.msg = ''; S.keepScroll = true; render();
     const f = document.querySelector(`form.lff[data-k="${CSS.escape(b.dataset.k)}"] select, form.lff[data-k="${CSS.escape(b.dataset.k)}"] textarea`); if (f) f.focus({preventScroll:true}); return; }
+  if (a === 'inh-all') { const f_ = b.dataset.f; if (INH.all.has(f_)) INH.all.delete(f_); else INH.all.add(f_); S.keepScroll = true; render(); const nb = document.querySelector(`[data-act=inh-all][data-f="${CSS.escape(f_)}"]`); if (nb) nb.focus({preventScroll:true}); return; }
   if (a === 'lf-cancel') { const k = LF.form; LF.form = null; LF.ferr = ''; S.keepScroll = true; render(); const t = document.querySelector(`[data-act=lf-claim][data-k="${CSS.escape(k || '')}"]`); if (t) t.focus(); return; }
   if (a === 'lf-clear') { Object.assign(LF, {q:'', feed:'', met:'', st:''}); ['lf-q', 'lf-feed', 'lf-met', 'lf-st'].forEach(id => { const n = $('#' + id); if (n) n.value = ''; }); lfFilter(); const q = $('#lf-q'); if (q) q.focus(); return; }
   if (a === 'lf-dec') { LF.dec = {id:+b.dataset.id, d:b.dataset.d}; LF.msg = ''; S.keepScroll = true; render(); const i = document.querySelector('form.lfd input[name=reason]'); if (i) i.focus({preventScroll:true}); return; }

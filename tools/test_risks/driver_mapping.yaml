@@ -1,0 +1,87 @@
+# MADE-UP TEST DATA: not real drivers. Shape of the risk assessment engine's driver_mapping.yaml.
+# TRUST doesn't read this file; it completes the made-up set the risk files above name.
+risk_drivers:
+  RD01:
+    trigger: "(get(RD01)==TRUE)"
+    questionnaire_fields: [RD01]
+    rationale: "The application keeps its own user accounts instead of using central sign-in, so access is granted and removed by hand."
+  RD02:
+    trigger: "(get(RD02)==TRUE)"
+    questionnaire_fields: [RD02]
+    rationale: "The team handles confidential client data."
+  RD03:
+    trigger: "(get(RD03)==TRUE)"
+    questionnaire_fields: [RD03]
+    rationale: "Service accounts with broad access are shared between several tools."
+  RD12:
+    trigger: "(get(RD12)>=3)"
+    questionnaire_fields: [RD12]
+    rationale: "The team supports three or more critical business processes."
+  RD14:
+    trigger: "(get(RD14_pct)>0.40)"
+    questionnaire_fields: [RD14_pct]
+    rationale: "More than 40% of the team works on legacy platforms that are hard to change and test."
+  RD22:
+    trigger: "(get(RD22)>prevailing(RD22))"
+    questionnaire_fields: []
+    rationale: "The team releases more often than the prevailing average, so there are more chances for a bad change."
+  RD23:
+    trigger: "(get(RD23)==TRUE)"
+    questionnaire_fields: [RD23]
+    rationale: "Some deployments can be made without a change ticket."
+  RD30:
+    trigger: "(get(RD30)==TRUE)"
+    questionnaire_fields: [RD30]
+    rationale: "Developers can deploy their own changes to production."
+  RD31:
+    trigger: "(get(RD31)==FALSE)"
+    questionnaire_fields: [RD31]
+    rationale: "There are no automated tests that run before a release."
+  RD36:
+    trigger: "(get(RD36)==TRUE)"
+    questionnaire_fields: [RD36]
+    rationale: "Internet-facing services are part of the team's estate."
+  RD40:
+    trigger: "(get(RD40)==TRUE)"
+    questionnaire_fields: [RD40]
+    rationale: "The team runs Tier 0 or Tier 1 applications."
+  RD41:
+    trigger: "(get(RD41_days)>365)"
+    questionnaire_fields: [RD41_days]
+    rationale: "No DR test has been done in the last 12 months."
+  RD44:
+    trigger: "(get(RD44)>0)"
+    questionnaire_fields: []
+    rationale: "Code scans show critical or high findings older than 30 days."
+  RD45:
+    trigger: "(get(RD45)==TRUE)"
+    questionnaire_fields: [RD45]
+    rationale: "Third-party libraries aren't updated on a schedule."
+  RD50:
+    trigger: "(get(RD50)==TRUE)"
+    questionnaire_fields: [RD50]
+    rationale: "The team's processes are in scope for financial reporting or a regulator."
+  RD54:
+    trigger: "(get(RD54)==TRUE)"
+    questionnaire_fields: [RD54]
+    rationale: "Clients use the team's services directly."
+  RD63:
+    trigger: "(get(RD63)>prevailing(RD63))"
+    questionnaire_fields: []
+    rationale: "The team has more incidents per 100 heads than the prevailing average."
+  RD64:
+    trigger: "(get(RD64)>0)"
+    questionnaire_fields: []
+    rationale: "Postmortem actions are past their due date."
+  RD70:
+    trigger: "(get(RD70)==FALSE)"
+    questionnaire_fields: [RD70]
+    rationale: "The datasets the team relies on have no named owner."
+  RD71:
+    trigger: "(get(RD71)==TRUE)"
+    questionnaire_fields: [RD71]
+    rationale: "Several teams edit the same critical data."
+  RD72:
+    trigger: "(get(RD72)==TRUE)"
+    questionnaire_fields: [RD72]
+    rationale: "Production data is copied into non-production environments."

@@ -119,9 +119,10 @@ def thresholds_for(mid, values, hib, cfg, unit_word="points"):
     if mc.get("basis") == "Policy":
         set_from = mc.get("set_from")
         reason = (f"Set from the {set_from} (set {_day(mc.get('set_on'))}); reviewed quarterly" if set_from
+                  else f"Set by {mc['set_by']} on {_day(mc.get('set_on'))}" if mc.get("set_by")
                   else "Initial tolerance thresholds for go-live")
         return dict(green=mc["green"], red=mc["red"], basis="Policy", provisional=False, reason=reason,
-                    set_from=set_from, set_on=mc.get("set_on"))
+                    set_from=set_from, set_on=mc.get("set_on"), set_by=mc.get("set_by"))
     if not values or len(values) < min_families(cfg):
         return None
     med = r1(statistics.median(values))
@@ -283,6 +284,32 @@ def expand_shared(counts, shared):
     return out
 
 
+def inherent_risk(feeds, tpl, month):
+    """Each family's inherent risk from the risk assessment file (owner, 9 Nov 2026; show only, no score change).
+    -> None when no file, else {file, carried_from, rule, families: {fid: [risk rows, Elevated first]}}.
+    Each row: risk id and name, likelihood, impact, elevated, the group behind it, its date, whether it's older
+    than 12 months, the drivers text, and the metrics that watch the risk (card.risks in config/metrics.json)."""
+    ra = feeds.get("risk_assessments") or {}
+    if ra.get("status") != "mapped":
+        return None
+    names = {rid: (r.get("name") or rid) for rid, r in config.risks().items()}
+    watched = {}
+    for mid, m in config.metrics().items():
+        for rid in ((m.get("card") or {}).get("risks") or []):
+            watched.setdefault(rid, []).append(mid)
+    year_ago = f"{int(month[:4]) - 1}{month[4:]}-01"
+    fams = {}
+    for fid, by_risk in (ra.get("by_family") or {}).items():
+        rows = [{"risk_id": rid, "risk": names.get(rid, rid), "likelihood": x["likelihood"], "impact": x["impact"],
+                 "elevated": x["elevated"], "group": x["group"], "assessed_on": x["assessed_on"],
+                 "stale": bool(x["assessed_on"] and x["assessed_on"] < year_ago), "drivers": x["drivers"],
+                 "metrics": sorted(watched.get(rid, []))} for rid, x in by_risk.items()]
+        fams[fid] = sorted(rows, key=lambda r: (not r["elevated"], r["risk_id"]))
+    return {"file": ra.get("file"), "carried_from": ra.get("carried_from"), "families": fams,
+            "groups": ra.get("groups") or [],
+            "rule": "Proposed: Elevated when likelihood is HIGH or CRITICAL and impact is HIGH or CRITICAL."}
+
+
 def family_tiers(feeds):
     """{family_id: (Tier 0/1 applications, all applications)} from the ITDR application file (owner, 4 Nov 2026).
     The ITDR application file is the only source of a tier: a DR test's own Tier is never used (a difference is
@@ -377,7 +404,7 @@ def score_month(mapped, cfg=None, tpl=None):
                 t["reason"] = t["reason"].replace("{month}", label(month))
                 thresholds[mid] = dict(green=t["green"], red=t["red"], version=1, basis=t["basis"], approved_at=None,
                                        reason=t["reason"], sets="both", provisional=t["provisional"], band=t.get("band"),
-                                       set_from=t.get("set_from"), set_on=t.get("set_on"))
+                                       set_from=t.get("set_from"), set_on=t.get("set_on"), set_by=t.get("set_by"))
             for fid in fids:
                 (n, a), un = ns[fid], (counts.get(fid) or {}).get("unrated", 0)
                 r = blank_result(None, None)
@@ -411,7 +438,7 @@ def score_month(mapped, cfg=None, tpl=None):
             t["reason"] = t["reason"].replace("{month}", label(month))
             thresholds[mid] = dict(green=t["green"], red=t["red"], version=1, basis=t["basis"],
                                    approved_at=None, reason=t["reason"], sets="both", provisional=t["provisional"],
-                                   band=t.get("band"), set_from=t.get("set_from"), set_on=t.get("set_on"))
+                                   band=t.get("band"), set_from=t.get("set_from"), set_on=t.get("set_on"), set_by=t.get("set_by"))
         all_unplaced = all(k == UNATTRIBUTED for k in counts if not k.startswith("_"))
         for fid in fids:
             c = counts.get(fid)
@@ -574,6 +601,7 @@ def score_month(mapped, cfg=None, tpl=None):
         submissions=submissions, firm_incomplete=firm_incomplete, files_needed=files_needed)
     period["caps"] = scoring.caps_from(cfg.get("caps"))       # the caps this month was scored with (a setting)
     period["coverage"] = scoring.coverage_from(cfg.get("coverage"), scoring.block_codes(tpl["metrics"]))   # and how much had to be measured (a setting)
+    period["inherent_risk"] = inherent_risk(feeds, tpl, month)
     f1 = meas["counts"].get("UN-01", {}).get("_firm", {})
     notes = []
     if f1.get("no_end_date"):

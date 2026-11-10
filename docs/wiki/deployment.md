@@ -51,6 +51,7 @@ TEST is a **second app built from the same code**, with its own Postgres add-on,
 |---|---|---|
 | `TRUST_ENV` | `test` (shows the **TEST · synthetic data** badge and banner) | not set (badge reads **Live data**) |
 | `TRUST_HR_ROOT_SAM_ACCOUNT` | `cto.demo` (the made-up CTO; overrides `hr_root_sam_account` in `config/settings.json`) | not set |
+| `TRUST_RISKS` | `tools/test_risks` (made-up risk files in the engine's shape, matching the made-up risk assessments; 9 Nov 2026) | not set (reads `config/risks/`) |
 
 Filling TEST, from the repo folder on a laptop:
 
@@ -144,6 +145,7 @@ The add-on gives **one** login, in `DATABASE_URL`, and TRUST uses it for everyth
 | `TRUST_MAX_UPLOAD_MB` | The largest upload the website accepts, in megabytes (default 55). | Optional. |
 | `TRUST_ENV` | `test` marks the [TEST environment](#the-test-environment): the page carries the TEST badge and banner. | Never set on production. |
 | `TRUST_HR_ROOT_SAM_ACCOUNT` | Overrides `hr_root_sam_account` from `config/settings.json`, so TEST can use the made-up CTO (`cto.demo`) with the same settings file as production. | TEST only. |
+| `TRUST_RISKS` | The folder of risk files to read instead of `config/risks/`. TEST sets it to `tools/test_risks` (made-up risks and drivers). | TEST only. |
 | `PG_BIN` | Folder with the Postgres 16 programs, for the tests that start a throwaway database. Default `/usr/lib/postgresql/16/bin`. | Development only. |
 
 No sign-in variables and no document folder: access is the add-on container's job, and there are no PDFs (owner, 2 Nov 2026).

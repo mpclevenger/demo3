@@ -76,6 +76,11 @@
       "owner": "",
       "team": ""
     },
+    "risk_assessments": {
+      "_name": "Risk assessments",
+      "owner": "",
+      "team": ""
+    },
     "secrets": {
       "_name": "Secrets findings",
       "owner": "",
